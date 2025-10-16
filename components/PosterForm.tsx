@@ -36,7 +36,8 @@ export default function PosterForm({ onResult, onResultUrl }: PosterFormProps) {
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loadingGenerateImage, setLoadingGenerateImage] = useState<boolean>(false);
+  const [loadingPrompt, setLoadingPrompt] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -46,27 +47,65 @@ export default function PosterForm({ onResult, onResultUrl }: PosterFormProps) {
     setPhotoPreview(file ? URL.createObjectURL(file) : null);
   }
 
-  async function handleGenerate(e?: React.FormEvent) {
+  function buildFormData(): FormData {
+    const form = new FormData();
+    form.append("clubName", clubName);
+    form.append("meetingNumber", meetingNumber);
+    form.append("date", date);
+    form.append("time", time);
+    form.append("place", place);
+    form.append("zoomLink", zoomLink);
+    form.append("theme", theme);
+    form.append("stylePreset", stylePreset);
+    form.append("paletteJson", JSON.stringify(palette));
+    form.append("useLogo", useLogo ? "1" : "0");
+    if (photoFile) form.append("photo", photoFile);
+    return form;
+  }
+
+  // Primary: call the real generation endpoint which returns a URL to the composed poster
+  async function handleGenerateImage(e?: React.FormEvent) {
     if (e) e.preventDefault();
     setError(null);
-    setLoading(true);
+    setLoadingGenerateImage(true);
     onResult(null);
     onResultUrl && onResultUrl(null);
 
     try {
-      const form = new FormData();
-      form.append("clubName", clubName);
-      form.append("meetingNumber", meetingNumber);
-      form.append("date", date);
-      form.append("time", time);
-      form.append("place", place);
-      form.append("zoomLink", zoomLink);
-      form.append("theme", theme);
-      form.append("stylePreset", stylePreset);
-      form.append("paletteJson", JSON.stringify(palette));
-      form.append("useLogo", useLogo ? "1" : "0");
-      if (photoFile) form.append("photo", photoFile);
+      const form = buildFormData();
+      const resp = await fetch("/api/generate-image", { method: "POST", body: form });
+      const data = await resp.json().catch(() => null);
 
+      if (!resp.ok) {
+        const msg = (data && (data.error || data.message)) || `Server ${resp.status}`;
+        throw new Error(msg);
+      }
+
+      // success: expected { url: string }
+      onResult(data ?? null);
+      if (data && typeof data === "object" && (data as any).url) {
+        onResultUrl && onResultUrl((data as any).url as string);
+      } else {
+        onResultUrl && onResultUrl(null);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message ?? "Unknown error");
+    } finally {
+      setLoadingGenerateImage(false);
+    }
+  }
+
+  // Secondary: call the prompt-only endpoint which returns the prompt JSON (no image generation)
+  async function handleGeneratePrompt(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    setError(null);
+    setLoadingPrompt(true);
+    onResult(null);
+    onResultUrl && onResultUrl(null);
+
+    try {
+      const form = buildFormData();
       const resp = await fetch("/api/generate", { method: "POST", body: form });
       const data = await resp.json().catch(() => null);
 
@@ -75,100 +114,97 @@ export default function PosterForm({ onResult, onResultUrl }: PosterFormProps) {
         throw new Error(msg);
       }
 
-      // return whatever the API returned: prompts json or { url }
+      // return the prompt JSON for inspection
       onResult(data ?? null);
-      if (data && typeof data === "object" && (data as any).url) {
-        onResultUrl && onResultUrl((data as any).url as string);
-      }
     } catch (err: any) {
       console.error(err);
       setError(err?.message ?? "Unknown error");
     } finally {
-      setLoading(false);
+      setLoadingPrompt(false);
     }
   }
 
   return (
-    <form onSubmit={handleGenerate} className="grid gap-6 bg-white p-6 rounded-lg shadow">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <TextInput label="Club name" value={clubName} onChange={setClubName} />
-        <TextInput label="Meeting #" value={meetingNumber} onChange={setMeetingNumber} />
-        <label className="block">
-          <span className="text-sm text-gray-700">Date</span>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 block w-full border rounded px-3 py-2" />
-        </label>
-        <label className="block">
-          <span className="text-sm text-gray-700">Time</span>
-          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="mt-1 block w-full border rounded px-3 py-2" />
-        </label>
-        <TextInput label="Place" value={place} onChange={setPlace} className="md:col-span-2" />
-        <TextInput label="Zoom link" value={zoomLink} onChange={setZoomLink} className="md:col-span-2" />
-        <TextInput label="Theme" value={theme} onChange={setTheme} className="md:col-span-2" />
-        <Select
-          label="Style preset"
-          value={stylePreset}
-          onChange={setStylePreset}
-          options={[
-            { value: "minimalist", label: "Minimalist" },
-            { value: "vintage", label: "Vintage" },
-            { value: "bold", label: "Bold" },
-            { value: "photorealistic", label: "Photorealistic" },
-            { value: "illustrative", label: "Illustrative" },
-          ]}
-        />
-        <Checkbox label="Overlay provided logo (public/logo.png)" checked={useLogo} onChange={setUseLogo} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FileUploader label="Upload portrait (optional)" onChange={handlePhotoChange} previewSrc={photoPreview} />
-        <div>
-          <div className="text-sm text-gray-700">Palette (editable)</div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <div>
-              <ColorSwatch label="primary" value={palette.primary} onChange={(v) => setPalette((p) => ({ ...p, primary: v }))} />
-            </div>
-            <div>
-              <ColorSwatch label="accent" value={palette.accent} onChange={(v) => setPalette((p) => ({ ...p, accent: v }))} />
-            </div>
-            <div>
-              <ColorSwatch label="bg" value={palette.bg} onChange={(v) => setPalette((p) => ({ ...p, bg: v }))} />
-            </div>
-            <div>
-              <ColorSwatch label="text" value={palette.text} onChange={(v) => setPalette((p) => ({ ...p, text: v }))} />
-            </div>
-          </div>
+    <div className="relative py-10 px-2 md:px-0">
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 opacity-80 pointer-events-none rounded-xl" />
+      <form className="relative z-10 grid gap-8 max-w-2xl mx-auto bg-white/90 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-gray-100" onSubmit={handleGenerateImage}>
+        <h2 className="text-2xl font-bold text-center text-blue-900 mb-6 tracking-tight">Create Your Toastmasters Poster</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <TextInput label="Club name" value={clubName} onChange={setClubName} className="" />
+          <TextInput label="Meeting #" value={meetingNumber} onChange={setMeetingNumber} className="" />
+          <label className="block">
+            <span className="text-sm font-medium text-blue-800">Date</span>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 block w-full border border-blue-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-300 transition" />
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium text-blue-800">Time</span>
+            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="mt-1 block w-full border border-blue-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-300 transition" />
+          </label>
+          <TextInput label="Place" value={place} onChange={setPlace} className="md:col-span-2" />
+          <TextInput label="Zoom link" value={zoomLink} onChange={setZoomLink} className="md:col-span-2" />
+          <TextInput label="Theme" value={theme} onChange={setTheme} className="md:col-span-2" />
+          <Select
+            label="Style preset"
+            value={stylePreset}
+            onChange={setStylePreset}
+            options={[
+              { value: "minimalist", label: "Minimalist" },
+              { value: "vintage", label: "Vintage" },
+              { value: "bold", label: "Bold" },
+              { value: "photorealistic", label: "Photorealistic" },
+              { value: "illustrative", label: "Illustrative" },
+            ]}
+            className=""
+          />
+          <Checkbox label="Overlay provided logo (public/logo.png)" checked={useLogo} onChange={setUseLogo} className="mt-2" />
         </div>
-      </div>
 
-      <div className="flex items-center space-x-3">
-        <Button type="submit" disabled={loading}>
-          {loading ? "Generating..." : "Generate Poster"}
-        </Button>
-        <button
-          type="button"
-          onClick={() => {
-            setClubName("");
-            setMeetingNumber("");
-            setDate("");
-            setTime("");
-            setPlace("");
-            setZoomLink("");
-            setTheme("");
-            setPhotoFile(null);
-            setPhotoPreview(null);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-            onResult(null);
-            onResultUrl && onResultUrl(null);
-            setError(null);
-          }}
-          className="px-4 py-2 border rounded"
-        >
-          Reset
-        </button>
-        <div className="ml-auto text-sm text-gray-500">Preview is a low-cost sample; final high-res uses production flow</div>
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FileUploader label="Upload portrait (optional)" onChange={handlePhotoChange} previewSrc={photoPreview} />
+          {/* Palette is now fixed in the code and not editable by the user */}
+        </div>
 
-      {error && <div className="text-sm text-red-600">Error: {error}</div>}
-    </form>
+        <div className="flex flex-wrap items-center gap-4 mt-2">
+          <Button type="submit" disabled={loadingGenerateImage || loadingPrompt} className="bg-blue-700 hover:bg-blue-800 text-white font-semibold px-6 py-2 rounded-lg shadow-md transition disabled:opacity-60">
+            {loadingGenerateImage ? "Generating poster..." : "Generate Poster"}
+          </Button>
+
+          <button
+            type="button"
+            onClick={handleGeneratePrompt}
+            disabled={loadingPrompt || loadingGenerateImage}
+            className="px-6 py-2 border border-yellow-400 rounded-lg bg-yellow-50 hover:bg-yellow-100 text-yellow-900 font-semibold shadow-sm transition disabled:opacity-60"
+          >
+            {loadingPrompt ? "Generating prompt..." : "Generate Prompt JSON"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setClubName("");
+              setMeetingNumber("");
+              setDate("");
+              setTime("");
+              setPlace("");
+              setZoomLink("");
+              setTheme("");
+              setPhotoFile(null);
+              setPhotoPreview(null);
+              if (fileInputRef.current) fileInputRef.current.value = "";
+              onResult(null);
+              onResultUrl && onResultUrl(null);
+              setError(null);
+            }}
+            className="px-6 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-gray-700 font-semibold shadow-sm transition"
+          >
+            Reset
+          </button>
+
+          <div className="ml-auto text-sm text-gray-500">Preview is a low-cost sample; final high-res uses production flow</div>
+        </div>
+
+        {error && <div className="text-sm text-red-600 mt-2">Error: {error}</div>}
+      </form>
+    </div>
   );
 }

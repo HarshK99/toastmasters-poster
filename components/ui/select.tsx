@@ -13,8 +13,12 @@ type SelectProps = {
 export default function Select({ label, value, onChange, options = [], className = "" }: SelectProps) {
   return (
     <label className={`block ${className}`}>
-      {label && <span className="text-sm text-gray-700">{label}</span>}
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 block w-full border rounded px-3 py-2">
+      {label && <span className="text-sm font-medium text-blue-800 mb-1 block">{label}</span>}
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 block w-full border border-blue-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-300 transition-all duration-150 shadow-sm hover:border-blue-400 bg-white"
+      >
         {options.map((o) =>
           typeof o === "string" ? (
             <option key={o} value={o}>
