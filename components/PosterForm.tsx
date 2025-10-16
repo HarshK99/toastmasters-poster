@@ -156,7 +156,6 @@ export default function PosterForm({ onResult, onResultUrl }: PosterFormProps) {
             ]}
             className=""
           />
-          <Checkbox label="Overlay provided logo (public/logo.png)" checked={useLogo} onChange={setUseLogo} className="mt-2" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

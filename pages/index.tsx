@@ -12,7 +12,7 @@ const Home: NextPage = () => {
       <div className="max-w-4xl mx-auto">
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-gray-800">Toastmasters Poster Builder</h1>
-          <p className="text-sm text-gray-600 mt-1">Short inputs → stylized poster. Upload portrait and your logo (logo is read server-side from public/logo.png).</p>
+          <p className="text-gray-600 mt-1">Generate custom posters for your Toastmasters events using AI.</p>
         </header>
 
         <PosterForm onResult={(data) => setResult(data)} onResultUrl={(url) => setResultUrl(url)} />
