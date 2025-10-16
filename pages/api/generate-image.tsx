@@ -138,12 +138,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const negativePrompt = "watermark, text, low-resolution, extra fingers, deformed face, extra limbs, artifacts, blurred";
 
     const basePrompt = [
-      `High-quality poster background for a Toastmasters club meeting with theme "${theme}".`,
-      `Composition: large negative space at center-right for portrait, bold headline area at top, elegant sans-serif typography placeholders, subtle paper texture.`,
-      `Include space for: club name ("${clubName}"), meeting number (${meetingNumber}), date (${date}), time (${time}), place (${place}), and a small area for Zoom link.`,
-      `Use the fixed color palette: primary=${palette.primary}, accent=${palette.accent}, bg=${palette.bg}, text=${palette.text}.`,
-      `Style preset: ${stylePreset}. Print-ready, 4:5 aspect ratio, high detail.`,
-      `Prefer minimal text from the model; final text will be overlaid during compositing.`,
+      `Create a high-quality poster background for a Toastmasters club meeting with theme "${theme}".`,
+      `Design with strong visual hierarchy:`,
+      `- Bold, prominent headline area at the top using modern sans-serif typography.`,
+      `- Large, clearly separated portrait area at center-right as the main focal point.`,
+      `- Metadata (club name, meeting number, date, time, place, Zoom link) arranged in a clean, modular grid below the headline.`,
+      `- Use generous whitespace and padding between sections for clarity.`,
+      `- Apply gradients, subtle drop shadows, and clean lines for a modern look.`,
+      `- Ensure high contrast between headline, portrait, and metadata areas.`,
+      `- Use the fixed color palette: primary=${palette.primary}, accent=${palette.accent}, bg=${palette.bg}, text=${palette.text}.`,
+      `- Print-ready, 4:5 aspect ratio, high detail.`,
+      `- Avoid excessive text; only placeholders for text, as final text will be overlaid during compositing.`,
     ].join(" ");
 
     const img2imgPrompt = [
