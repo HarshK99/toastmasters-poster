@@ -70,7 +70,7 @@ function parseForm(req: NextApiRequest): Promise<{ fields: Fields; files: Files 
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Allow CORS preflight (helpful for separate frontend)
+  // Allow CORS preflight (helpful if frontend is hosted separately)
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -102,7 +102,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       text: "#111827",
     };
 
-    const hasPhoto = Boolean(files && Object.keys(files).length && (files as Files)["photo"]);
+    // detect uploaded photo presence robustly (supports different formidable shapes)
+    // file may appear under files.photo or files['photo']
+    const rawFiles: unknown = files;
+    let hasPhoto = false;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fAny = rawFiles as any;
+      const photoField = fAny?.photo ?? fAny?.["photo"];
+      // check common properties used by different formidable versions
+      if (photoField) {
+        // typical keys: filepath (v3+), file.path (older), originalFilename, size
+        hasPhoto = Boolean(photoField.filepath || photoField.path || photoField._writeStream || photoField.size || photoField.originalFilename);
+      }
+    } catch {
+      hasPhoto = false;
+    }
 
     const negativePrompt = "watermark, text, low-resolution, extra fingers, deformed face, extra limbs, artifacts, blurred";
 
