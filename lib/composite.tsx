@@ -44,31 +44,31 @@ export async function composePoster(opts: ComposeOptions): Promise<Buffer> {
   const logoBuf = logoPath && fs.existsSync(logoPath) ? fs.readFileSync(logoPath) : null;
 
   if (!bgBuf) throw new Error("composePoster: missing or invalid backgroundBuffer");
-  if (!portraitBuf) throw new Error("composePoster: missing or invalid portraitBuffer");
+  // Only require portraitBuf if it is provided and not empty
+  const hasPortrait = portraitBuf && portraitBuf.length > 0;
 
   const bgMeta = await sharp(bgBuf).metadata();
   const BG_W = bgMeta.width ?? 1024;
   const BG_H = bgMeta.height ?? 1280;
 
-  const maxPortraitW = Math.round(BG_W * 0.6);
-  const maxPortraitH = Math.round(BG_H * 0.72);
-
-  const portraitSharp = sharp(portraitBuf).rotate();
-  const portraitMeta = await portraitSharp.metadata();
-  const targetPortraitWidth = Math.min(portraitMeta.width ?? maxPortraitW, maxPortraitW);
-  const targetPortraitHeight = Math.min(portraitMeta.height ?? maxPortraitH, maxPortraitH);
-
-  const portraitResizedBuf = await portraitSharp
-    .resize({
-      width: targetPortraitWidth,
-      height: targetPortraitHeight,
-      fit: "inside",
-      withoutEnlargement: true,
-    })
-    .png()
-    .toBuffer();
-
-  const portraitResizedMeta = await sharp(portraitResizedBuf).metadata();
+  let portraitResizedBuf: Buffer | null = null;
+  if (hasPortrait) {
+    const maxPortraitW = Math.round(BG_W * 0.6);
+    const maxPortraitH = Math.round(BG_H * 0.72);
+    const portraitSharp = sharp(portraitBuf!).rotate();
+    const portraitMeta = await portraitSharp.metadata();
+    const targetPortraitWidth = Math.min(portraitMeta.width ?? maxPortraitW, maxPortraitW);
+    const targetPortraitHeight = Math.min(portraitMeta.height ?? maxPortraitH, maxPortraitH);
+    portraitResizedBuf = await portraitSharp
+      .resize({
+        width: targetPortraitWidth,
+        height: targetPortraitHeight,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .png()
+      .toBuffer();
+  }
 
   let logoResizedBuf: Buffer | null = null;
   if (logoBuf) {
@@ -89,10 +89,13 @@ export async function composePoster(opts: ComposeOptions): Promise<Buffer> {
   const portraitLeft = Math.round(BG_W * 0.08);
   const portraitTop = Math.round(BG_H * 0.12);
 
-  const composites: Array<{ input: Buffer; left: number; top: number }> = [
-    { input: portraitResizedBuf, left: portraitLeft, top: portraitTop },
-  ];
-
+  const composites: Array<{ input: Buffer; left: number; top: number }> = [];
+  if (portraitResizedBuf) {
+    const portraitLeft = Math.round(BG_W * 0.08);
+    const portraitTop = Math.round(BG_H * 0.12);
+    composites.push({ input: portraitResizedBuf, left: portraitLeft, top: portraitTop });
+  }
+  // Only composite the user-provided logo, no extra logos
   if (logoResizedBuf) {
     composites.push({ input: logoResizedBuf, left: 32, top: 32 });
   }
