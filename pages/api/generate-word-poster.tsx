@@ -52,9 +52,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // 2. Compose the poster
   try {
-    // Poster size
+    // Poster size (square)
     const width = 1024;
-    const height = 1280;
+    const height = 1024;
     // Background
     const bg = await sharp({
       create: {
@@ -65,19 +65,75 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     }).png().toBuffer();
 
-    // Compose SVG overlay
+    // Helper: escape XML
+    const escapeXml = (str: string) =>
+      String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+
+    // Helper: simple word-wrap by max chars per line (preserves words)
+    const wrapText = (text: string, maxChars: number, maxLines = 4) => {
+      const words = text.split(/\s+/);
+      const lines: string[] = [];
+      let current = '';
+      for (const w of words) {
+        if ((current + ' ' + w).trim().length <= maxChars) {
+          current = (current + ' ' + w).trim();
+        } else {
+          if (current) lines.push(current);
+          current = w;
+          if (lines.length >= maxLines) break;
+        }
+      }
+      if (current && lines.length < maxLines) lines.push(current);
+      return lines.slice(0, maxLines);
+    };
+
+    const meaningLines = wrapText(meaning || '', 42, 3);
+    const exampleLines = wrapText(example || '', 38, 3);
+
+    // Compose SVG overlay (no level text; add labels, header/footer)
+    const headerHeight = Math.round(height * 0.12); // 12% header
+    const footerHeight = Math.round(height * 0.10); // 10% footer
+
     const svg = `
       <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
         <style>
-          .word { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 80px; font-weight: bold; fill: #0B3D91; }
-          .level { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 32px; fill: #E94B35; font-weight: bold; }
-          .meaning { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 36px; fill: #333; }
-          .example { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 28px; fill: #555; font-style: italic; }
+          .heading { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 40px; fill: #ffffff; letter-spacing: 1px; text-transform: uppercase; }
+          .word { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 88px; font-weight: bold; fill: #0B3D91; }
+          .label { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 36px; fill: #333; font-weight: 700; }
+          .meaning { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 50px; fill: #333; }
+          .example { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 50px; fill: #555; font-style: italic; }
         </style>
-        <text x="50%" y="13%" text-anchor="middle" class="level">${level.charAt(0).toUpperCase() + level.slice(1)} word${theme ? ` • Theme: ${theme}` : ''}</text>
-        <text x="50%" y="22%" text-anchor="middle" class="word">${word}</text>
-        <text x="50%" y="32%" text-anchor="middle" class="meaning">${meaning}</text>
-        <text x="50%" y="42%" text-anchor="middle" class="example">${example}</text>
+        <!-- header background -->
+        <rect x="0" y="0" width="100%" height="${headerHeight}" fill="#0B3D91" />
+        <!-- footer background -->
+        <rect x="0" y="${height - footerHeight}" width="100%" height="${footerHeight}" fill="#0B3D91" />
+  <!-- heading inside header (white) -->
+  <text x="50%" y="${Math.round(headerHeight * 0.6)}" text-anchor="middle" class="heading">Word of the Day</text>
+  <!-- extra space after header: move word further down -->
+  <text x="50%" y="24%" text-anchor="middle" class="word">${escapeXml(word)}</text>
+        <g>
+          <!-- meaning block moved slightly down to add spacing -->
+          <text x="50%" y="36%" text-anchor="middle">
+            <tspan class="label" x="50%" dy="0">Meaning</tspan>
+            ${meaningLines
+              .map((l, i) => `<tspan class="meaning" x="50%" dy="${i === 0 ? 1.2 : 1.2}em">${escapeXml(l)}</tspan>`)
+              .join('')}
+          </text>
+        </g>
+        <g>
+          <!-- example block moved down a bit -->
+          <text x="50%" y="60%" text-anchor="middle">
+            <tspan class="label" x="50%" dy="0">Example</tspan>
+            ${exampleLines
+              .map((l, i) => `<tspan class="example" x="50%" dy="${i === 0 ? 1.2 : 1.2}em">${escapeXml(l)}</tspan>`)
+              .join('')}
+          </text>
+        </g>
       </svg>
     `;
 
