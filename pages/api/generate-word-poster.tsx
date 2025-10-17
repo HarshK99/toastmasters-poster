@@ -7,15 +7,70 @@ import sharp from "sharp";
 
 export const config = { api: { bodyParser: true } };
 
+type WordJson = { word: string; meaning: string; example: string };
+
+async function callOpenAIForWord(theme: string, level: string): Promise<WordJson | null> {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) return null;
+  try {
+    const endpoint = 'https://api.openai.com/v1/chat/completions';
+    const system = `You are a helpful assistant that returns a single English word, its concise one-line meaning, and a short example sentence using the word. Output must be valid JSON with keys: word, meaning, example. Do NOT output any other text.`;
+    const prompt = `Generate a ${level} difficulty word related to the theme "${theme}". Return only a JSON object like {"word":"...","meaning":"...","example":"..."}`;
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ model: 'gpt-40-mini', messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }], temperature: 0.7, max_tokens: 200 }),
+    });
+    if (!resp.ok) {
+      console.error('[generate-word-poster] OpenAI failed', await resp.text());
+      return null;
+    }
+    const d = await resp.json();
+    const text = d?.choices?.[0]?.message?.content ?? d?.choices?.[0]?.text;
+    if (!text || typeof text !== 'string') return null;
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start === -1 || end === -1) return null;
+    const json = JSON.parse(text.slice(start, end + 1));
+    if (json.word && json.meaning && json.example) return { word: String(json.word), meaning: String(json.meaning), example: String(json.example) };
+    return null;
+  } catch (err) {
+    console.error('[generate-word-poster] callOpenAI error', err);
+    return null;
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: `Method ${req.method} not allowed.` });
   }
 
-  const { word, meaning, example, level = "medium", theme = "" } = req.body || {};
-  if (!word || !meaning || !example || !level) {
-    return res.status(400).json({ error: "Missing required fields: word, meaning, example, level." });
+  const { theme = '', level = 'medium' } = req.body || {};
+  if (!level) return res.status(400).json({ error: 'Missing level' });
+
+  // Step A: if word/meaning/example not provided, call OpenAI to get them
+  let word: string | undefined = undefined;
+  let meaning: string | undefined = undefined;
+  let example: string | undefined = undefined;
+  try {
+    const ai = await callOpenAIForWord(theme, level);
+    if (ai) {
+      word = ai.word;
+      meaning = ai.meaning;
+      example = ai.example;
+    }
+  } catch (err) {
+    console.error('[generate-word-poster] LLM step failed', err);
+  }
+  // If LLM failed and request provided fields, try to use them
+  const body = req.body || {};
+  if (!word) word = body.word;
+  if (!meaning) meaning = body.meaning;
+  if (!example) example = body.example;
+
+  if (!word || !meaning || !example) {
+    return res.status(500).json({ error: 'Failed to obtain word/meaning/example from LLM or request body.' });
   }
 
   // 1. Generate a small illustration for the example sentence
@@ -160,8 +215,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const outName = `word-poster-${Date.now()}.png`;
     const outPath = path.join(outDir, outName);
     fs.writeFileSync(outPath, finalBuffer);
-    const publicUrl = `${process.env.BASE_URL ?? ""}/output/${outName}`;
-    return res.status(200).json({ url: publicUrl });
+  const publicUrl = `${process.env.BASE_URL ?? ""}/output/${outName}`;
+  const resp: any = { url: publicUrl, word, meaning, example };
+  if (!illustrationBuffer) resp.note = 'Poster created without illustration.';
+  return res.status(200).json(resp);
   } catch (err) {
     console.error("[generate-word-poster] error:", err);
     return res.status(500).json({ error: "Failed to compose poster." });
