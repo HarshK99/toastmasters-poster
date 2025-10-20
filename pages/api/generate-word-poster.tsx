@@ -4,6 +4,9 @@ import fs from 'fs';
 import path from 'path';
 import sharp from "sharp";
 
+path.resolve(process.cwd(), 'fonts', 'fonts.conf');
+path.resolve(process.cwd(), 'fonts', 'Inter-VariableFont_opsz_wght.ttf');
+
 export const config = { api: { bodyParser: true } };
 
 type WordJson = { word: string; meaning: string; example: string };
@@ -200,6 +203,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       </svg>
     `;
 
+    // If caller asked for the raw SVG for debugging, return it and the embedded font name
+    const reqBody: any = req.body || {};
+    if (reqBody.returnSvg) {
+      const respObj = { svg, embeddedFont: embeddedFontFound ? path.basename(embeddedFontFound) : null };
+      return res.status(200).json(respObj);
+    }
+
     // Compose layers
     const compositeLayers: { input: Buffer; top: number; left: number }[] = [
       { input: Buffer.from(svg), top: 0, left: 0 },
@@ -213,9 +223,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Return image as base64 data URL instead of saving to disk
     const dataUrl = `data:image/png;base64,${finalBuffer.toString('base64')}`;
-  const respObj: { dataUrl: string; word: string; meaning: string; example: string; note?: string; embeddedFont?: string | null } = { dataUrl, word, meaning, example };
-  respObj.note = 'Poster created without illustration (not saved to disk).';
-  respObj.embeddedFont = embeddedFontFound ? path.basename(embeddedFontFound) : null;
+    const respObj: { dataUrl: string; word: string; meaning: string; example: string; note?: string; embeddedFont?: string | null } = { dataUrl, word, meaning, example };
+    respObj.note = 'Poster created without illustration (not saved to disk).';
+    respObj.embeddedFont = embeddedFontFound ? path.basename(embeddedFontFound) : null;
     return res.status(200).json(respObj);
   } catch (err) {
     console.error("[generate-word-poster] error:", err);
