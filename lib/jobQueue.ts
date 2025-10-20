@@ -8,7 +8,7 @@ type Job = {
   level: string;
   status: JobStatus;
   progress?: string;
-  result?: any;
+  result?: Record<string, unknown> | undefined;
   error?: string;
 };
 
@@ -45,28 +45,43 @@ export function createJob(theme: string, level: string, text?: { word: string; m
         jobs.set(id, job);
       }
 
-      const result = await processPosterJob({ id, theme, level, word: txt.word, meaning: txt.meaning, example: txt.example }, (p: string, data?: any) => {
-        job.progress = p;
-        // if the worker provides partial text, store it immediately so clients
-        // polling job-status can show the word/meaning/example before image is ready
-        if (p === 'text-ready' && data) {
-          job.result = job.result || {};
-          job.result.text = { word: data.word, meaning: data.meaning, example: data.example };
+      const result = await processPosterJob(
+        { id, theme, level, word: txt.word, meaning: txt.meaning, example: txt.example },
+        (p: string, data?: unknown) => {
+          job.progress = p;
+          // if the worker provides partial text, store it immediately so clients
+          // polling job-status can show the word/meaning/example before image is ready
+          if (p === 'text-ready' && data && typeof data === 'object') {
+            const d = data as { word?: string; meaning?: string; example?: string };
+            job.result = job.result || {};
+            job.result.text = { word: d.word ?? '', meaning: d.meaning ?? '', example: d.example ?? '' };
+          }
+          // if illustration failed or invalid, store the error but keep text
+          if ((p === 'illustration-failed' || p === 'illustration-invalid') && data !== undefined) {
+            job.result = job.result || {};
+            // Safely extract an "error" property if present, otherwise stringify data
+            if (typeof data === 'object' && data !== null && 'error' in data) {
+              const d = data as Record<string, unknown>;
+              job.result.illustrationError = String(d.error ?? JSON.stringify(d));
+            } else {
+              job.result.illustrationError = String(data);
+            }
+          }
+          jobs.set(id, job);
         }
-        // if illustration failed or invalid, store the error but keep text
-        if ((p === 'illustration-failed' || p === 'illustration-invalid') && data) {
-          job.result = job.result || {};
-          job.result.illustrationError = data.error || String(data);
-        }
-        jobs.set(id, job);
-      });
+      );
       job.status = 'completed';
       job.result = result;
       job.progress = 'done';
       jobs.set(id, job);
-    } catch (err: any) {
+    } catch (err: unknown) {
       job.status = 'failed';
-      job.error = String(err?.message || err);
+      // Prefer Error.message when available, otherwise stringify
+      if (err instanceof Error) {
+        job.error = err.message;
+      } else {
+        job.error = String(err);
+      }
       job.progress = 'error';
       jobs.set(id, job);
     }

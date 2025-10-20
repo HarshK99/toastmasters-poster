@@ -1,4 +1,3 @@
-import { createPrediction, pollPrediction, downloadUrlToBuffer } from '../lib/replicate';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
@@ -52,12 +51,12 @@ export async function generateWordJson(theme: string, level: string) {
 }
 
 // onProgress may receive an optional data payload for richer updates
-export async function processPosterJob(payload: JobPayload, onProgress: (p: string, data?: any) => void) {
-  const { theme, level } = payload;
+export async function processPosterJob(payload: JobPayload & { skipIllustration?: boolean }, onProgress: (p: string, data?: unknown) => void) {
+  const { theme, level, skipIllustration } = payload;
   // allow caller to pass pre-generated text (jobQueue will do this)
-  let word = (payload as any).word || '';
-  let meaning = (payload as any).meaning || '';
-  let example = (payload as any).example || '';
+  let word = payload.word || '';
+  let meaning = payload.meaning || '';
+  let example = payload.example || '';
 
   // Generate text if not supplied by the caller
   if (!word || !meaning || !example) {
@@ -82,41 +81,12 @@ export async function processPosterJob(payload: JobPayload, onProgress: (p: stri
     // ignore errors from progress handler
   }
 
-  // Generate illustration via Replicate if available
-  let illustrationBuffer: Buffer | null = null;
+  // Illustrations removed: this pipeline composes posters without an image.
+  // Emit an event so callers know illustration is intentionally skipped.
   try {
-    onProgress('start-illustration');
-    const REPLICATE_TEXT_VERSION = process.env.REPLICATE_TEXT_VERSION;
-    if (process.env.REPLICATE_API_TOKEN && REPLICATE_TEXT_VERSION) {
-      const prompt = `Illustration for the sentence: ${example}. The word is related to the theme '${theme}' and is a ${level} level word. Minimal, modern, colorful, no text, 1:1 aspect ratio.`;
-      const negativePrompt = 'text, watermark, logo, border, frame, signature, caption, label, writing, words';
-      const input = { prompt, negative_prompt: negativePrompt, width: 512, height: 512, guidance_scale: 7.5 };
-      const { predictionUrl } = await createPrediction(REPLICATE_TEXT_VERSION, input);
-      const final = await pollPrediction(predictionUrl, 120_000, 1500);
-      let imgUrl: string | null = null;
-      if (Array.isArray(final.output) && final.output.length > 0) imgUrl = String(final.output[0]);
-      else if (typeof final.output === 'string' && final.output) imgUrl = final.output;
-      if (imgUrl) {
-        illustrationBuffer = await downloadUrlToBuffer(imgUrl);
-        // Validate buffer is a supported image for sharp. If not, discard it.
-        if (illustrationBuffer) {
-          try {
-            // This will throw if the buffer is not a valid/recognized image
-            // or has an unsupported format.
-            // eslint-disable-next-line no-await-in-loop
-            await sharp(illustrationBuffer).metadata();
-          } catch (err) {
-            console.error('[processPosterJob] downloaded illustration invalid or unsupported format', err);
-            try { onProgress('illustration-invalid', { error: String(err) }); } catch (e) {}
-            illustrationBuffer = null;
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.error('[processPosterJob] illustration failed', err);
-    try { onProgress('illustration-failed', { error: String(err) }); } catch (e) {}
-    illustrationBuffer = null;
+    onProgress('illustration-skipped', { reason: 'no-illustration' });
+  } catch (e) {
+    // ignore
   }
 
   onProgress('compose');
@@ -147,8 +117,7 @@ export async function processPosterJob(payload: JobPayload, onProgress: (p: stri
   const footerHeight = Math.round(height * 0.10);
   const svg = `...`; // reuse composition from previous file for brevity (omitted in patch)
 
-  let compositeLayers: any[] = [{ input: Buffer.from(svg), top: 0, left: 0 }];
-  if (illustrationBuffer) compositeLayers.push({ input: illustrationBuffer, top: Math.round(height * 0.5), left: Math.round((width - 512) / 2) });
+  const compositeLayers: { input: Buffer; top: number; left: number }[] = [{ input: Buffer.from(svg), top: 0, left: 0 }];
 
   const finalBuffer = await sharp(bg).composite(compositeLayers).png().toBuffer();
   const outDir = path.join(process.cwd(), 'public/output');
@@ -159,7 +128,7 @@ export async function processPosterJob(payload: JobPayload, onProgress: (p: stri
 
   const publicUrl = `${process.env.BASE_URL ?? ''}/output/${outName}`;
   onProgress('done');
-  return { url: publicUrl, word, meaning, example, illustration: Boolean(illustrationBuffer) };
+  return { url: publicUrl, word, meaning, example, illustration: false };
 }
 
 export default processPosterJob;

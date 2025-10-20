@@ -1,6 +1,5 @@
 // pages/api/generate-word-poster.tsx
 import type { NextApiRequest, NextApiResponse } from "next";
-import { createPrediction, pollPrediction, downloadUrlToBuffer } from "../../lib/replicate";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
@@ -73,37 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Failed to obtain word/meaning/example from LLM or request body.' });
   }
 
-  // 1. Generate a small illustration for the example sentence
-  let illustrationBuffer: Buffer | null = null;
-  try {
-    const prompt = `Illustration for the sentence: ${example}. The word is related to the theme '${theme}' and is a ${level} level word. Minimal, modern, colorful, no text, 1:1 aspect ratio.`;
-    const negativePrompt = "text, watermark, logo, border, frame, signature, caption, label, writing, words";
-    const REPLICATE_TEXT_VERSION = process.env.REPLICATE_TEXT_VERSION;
-    if (!process.env.REPLICATE_API_TOKEN || !REPLICATE_TEXT_VERSION) {
-      throw new Error("Missing Replicate API credentials.");
-    }
-    const input = {
-      prompt,
-      negative_prompt: negativePrompt,
-      width: 512,
-      height: 512,
-      guidance_scale: 7.5,
-    };
-    const { predictionUrl } = await createPrediction(REPLICATE_TEXT_VERSION, input);
-    const final = await pollPrediction(predictionUrl, 120_000, 1500);
-    let imgUrl: string | null = null;
-    if (Array.isArray(final.output) && final.output.length > 0) {
-      imgUrl = String(final.output[0]);
-    } else if (typeof final.output === "string" && final.output) {
-      imgUrl = final.output;
-    }
-    if (imgUrl) {
-      illustrationBuffer = await downloadUrlToBuffer(imgUrl);
-    }
-  } catch (err) {
-    console.error("[generate-word-poster] Illustration generation failed:", err);
-    illustrationBuffer = null;
-  }
+  // Illustrations removed - poster will be composed without an image.
 
   // 2. Compose the poster
   try {
@@ -193,16 +162,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     `;
 
     // Compose layers
-    let compositeLayers: any[] = [
+    const compositeLayers: { input: Buffer; top: number; left: number }[] = [
       { input: Buffer.from(svg), top: 0, left: 0 },
     ];
-    if (illustrationBuffer) {
-      compositeLayers.push({
-        input: illustrationBuffer,
-        top: Math.round(height * 0.5),
-        left: Math.round((width - 512) / 2),
-      });
-    }
+    // No illustration layer is added (illustration removed)
 
     const finalBuffer = await sharp(bg)
       .composite(compositeLayers)
@@ -216,9 +179,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const outPath = path.join(outDir, outName);
     fs.writeFileSync(outPath, finalBuffer);
   const publicUrl = `${process.env.BASE_URL ?? ""}/output/${outName}`;
-  const resp: any = { url: publicUrl, word, meaning, example };
-  if (!illustrationBuffer) resp.note = 'Poster created without illustration.';
-  return res.status(200).json(resp);
+  const respObj: { url: string; word: string; meaning: string; example: string; note?: string } = { url: publicUrl, word, meaning, example };
+  respObj.note = 'Poster created without illustration.';
+  return res.status(200).json(respObj);
   } catch (err) {
     console.error("[generate-word-poster] error:", err);
     return res.status(500).json({ error: "Failed to compose poster." });

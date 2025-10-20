@@ -20,7 +20,7 @@ export default function PromptPreview({ data, className = "" }: PromptPreviewPro
     try {
       await navigator.clipboard.writeText(jsonString);
       // optional small UX: alert or toast (avoid alert in production)
-      // eslint-disable-next-line no-alert
+       
       alert("Prompt JSON copied to clipboard");
     } catch {
       // fallback: create a temporary textarea
@@ -30,7 +30,7 @@ export default function PromptPreview({ data, className = "" }: PromptPreviewPro
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
-      // eslint-disable-next-line no-alert
+       
       alert("Prompt JSON copied to clipboard (fallback)");
     }
   }
