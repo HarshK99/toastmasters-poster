@@ -126,12 +126,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Try to embed a local font if available. Check multiple candidate filenames
     // so variable or differently-named TTFs are recognized (e.g. Inter-VariableFont_opsz,wght.ttf).
     let embeddedFontCss = '';
+    let embeddedFontFound: string | null = null;
     try {
       const fontsDir = path.join(process.cwd(), 'public', 'fonts');
       const candidates = [
         'Inter-Regular.ttf',
         'Inter-Regular.woff2',
         'Inter-VariableFont_opsz,wght.ttf',
+        'Inter-VariableFont_opsz_wght.ttf',
         'Inter-VariableFont.ttf',
         'inter.ttf',
       ];
@@ -143,12 +145,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           break;
         }
       }
-      // Fallback: if the directory exists, pick the first .ttf file
+      // Fallback: if the directory exists, pick the first .ttf or .woff2 file
       if (!found && fs.existsSync(fontsDir)) {
         const files = fs.readdirSync(fontsDir).filter((f) => f.toLowerCase().endsWith('.ttf') || f.toLowerCase().endsWith('.woff2'));
         if (files.length > 0) found = path.join(fontsDir, files[0]);
       }
       if (found) {
+        embeddedFontFound = found;
         const buf = fs.readFileSync(found);
         const b64 = buf.toString('base64');
         const mime = found.toLowerCase().endsWith('.woff2') ? 'font/woff2' : 'font/ttf';
@@ -210,8 +213,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Return image as base64 data URL instead of saving to disk
     const dataUrl = `data:image/png;base64,${finalBuffer.toString('base64')}`;
-    const respObj: { dataUrl: string; word: string; meaning: string; example: string; note?: string } = { dataUrl, word, meaning, example };
-    respObj.note = 'Poster created without illustration (not saved to disk).';
+  const respObj: { dataUrl: string; word: string; meaning: string; example: string; note?: string; embeddedFont?: string | null } = { dataUrl, word, meaning, example };
+  respObj.note = 'Poster created without illustration (not saved to disk).';
+  respObj.embeddedFont = embeddedFontFound ? path.basename(embeddedFontFound) : null;
     return res.status(200).json(respObj);
   } catch (err) {
     console.error("[generate-word-poster] error:", err);
