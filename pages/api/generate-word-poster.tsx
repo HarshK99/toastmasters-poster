@@ -1,5 +1,7 @@
 // pages/api/generate-word-poster.tsx
 import type { NextApiRequest, NextApiResponse } from "next";
+import fs from 'fs';
+import path from 'path';
 import sharp from "sharp";
 
 export const config = { api: { bodyParser: true } };
@@ -121,14 +123,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const headerHeight = Math.round(height * 0.12); // 12% header
     const footerHeight = Math.round(height * 0.10); // 10% footer
 
+    // Try to embed a local font if available. Check multiple candidate filenames
+    // so variable or differently-named TTFs are recognized (e.g. Inter-VariableFont_opsz,wght.ttf).
+    let embeddedFontCss = '';
+    try {
+      const fontsDir = path.join(process.cwd(), 'public', 'fonts');
+      const candidates = [
+        'Inter-Regular.ttf',
+        'Inter-Regular.woff2',
+        'Inter-VariableFont_opsz,wght.ttf',
+        'Inter-VariableFont.ttf',
+        'inter.ttf',
+      ];
+      let found: string | null = null;
+      for (const c of candidates) {
+        const p = path.join(fontsDir, c);
+        if (fs.existsSync(p)) {
+          found = p;
+          break;
+        }
+      }
+      // Fallback: if the directory exists, pick the first .ttf file
+      if (!found && fs.existsSync(fontsDir)) {
+        const files = fs.readdirSync(fontsDir).filter((f) => f.toLowerCase().endsWith('.ttf') || f.toLowerCase().endsWith('.woff2'));
+        if (files.length > 0) found = path.join(fontsDir, files[0]);
+      }
+      if (found) {
+        const buf = fs.readFileSync(found);
+        const b64 = buf.toString('base64');
+        const mime = found.toLowerCase().endsWith('.woff2') ? 'font/woff2' : 'font/ttf';
+        embeddedFontCss = `@font-face{font-family: 'EmbeddedFont'; src: url('data:${mime};base64,${b64}') format('${mime === 'font/woff2' ? 'woff2' : 'truetype'}'); font-weight: 400; font-style: normal;}`;
+      }
+    } catch (e) {
+      // ignore font embedding errors
+    }
+
     const svg = `
       <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
         <style>
-          .heading { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 40px; fill: #ffffff; letter-spacing: 1px; text-transform: uppercase; }
-          .word { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 88px; font-weight: bold; fill: #0B3D91; }
-          .label { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 36px; fill: #333; font-weight: 700; }
-          .meaning { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 50px; fill: #333; }
-          .example { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 50px; fill: #555; font-style: italic; }
+          ${embeddedFontCss}
+          .heading { font-family: 'EmbeddedFont', 'Helvetica Neue', Arial, sans-serif; font-size: 40px; fill: #ffffff; letter-spacing: 1px; text-transform: uppercase; }
+          .word { font-family: 'EmbeddedFont', 'Helvetica Neue', Arial, sans-serif; font-size: 88px; font-weight: bold; fill: #0B3D91; }
+          .label { font-family: 'EmbeddedFont', 'Helvetica Neue', Arial, sans-serif; font-size: 36px; fill: #333; font-weight: 700; }
+          .meaning { font-family: 'EmbeddedFont', 'Helvetica Neue', Arial, sans-serif; font-size: 50px; fill: #333; }
+          .example { font-family: 'EmbeddedFont', 'Helvetica Neue', Arial, sans-serif; font-size: 50px; fill: #555; font-style: italic; }
         </style>
         <!-- header background -->
         <rect x="0" y="0" width="100%" height="${headerHeight}" fill="#0B3D91" />
