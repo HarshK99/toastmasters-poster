@@ -11,8 +11,8 @@ const Home: NextPage = () => {
       <header className="fixed top-0 left-0 right-0 bg-white/60 backdrop-blur-md border-b z-30">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-gray-800">Word of the Day</h1>
-            <p className="text-sm text-gray-600">AI generated word of the day for toastmasters meetings</p>
+            <h1 className="text-xl font-semibold text-gray-800">Word of the Day Generator</h1>
+            <p className="text-sm text-gray-600">Create theme-based words and posters for Toastmasters meetings in seconds</p>
           </div>
          
         </div>
@@ -40,7 +40,7 @@ const Home: NextPage = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-gray-500">Poster preview will appear here after generation.</div>
+                  <div className="text-gray-500">Poster will appear here after generation.</div>
                 )}
               </div>
             </div>
@@ -48,8 +48,8 @@ const Home: NextPage = () => {
         </div>
       </main>
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t">
-        <div className="max-w-6xl mx-auto px-6 py-3 text-sm text-gray-600">Developed for Toastmasters by HK</div>
+      <footer className="bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t">
+        <div className="max-w-6xl mx-auto px-6 py-3 text-sm text-gray-600">Developed for Toastmasters meetings by HK</div>
       </footer>
     </div>
   );
