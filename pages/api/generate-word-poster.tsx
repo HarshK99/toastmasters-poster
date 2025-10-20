@@ -47,25 +47,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { theme = '', level = 'medium' } = req.body || {};
   if (!level) return res.status(400).json({ error: 'Missing level' });
 
-  // Step A: if word/meaning/example not provided, call OpenAI to get them
-  let word: string | undefined = undefined;
-  let meaning: string | undefined = undefined;
-  let example: string | undefined = undefined;
-  try {
-    const ai = await callOpenAIForWord(theme, level);
-    if (ai) {
-      word = ai.word;
-      meaning = ai.meaning;
-      example = ai.example;
-    }
-  } catch (err) {
-    console.error('[generate-word-poster] LLM step failed', err);
-  }
-  // If LLM failed and request provided fields, try to use them
+  // Step A: Prefer text supplied by the caller; only call OpenAI if missing
   const body = req.body || {};
-  if (!word) word = body.word;
-  if (!meaning) meaning = body.meaning;
-  if (!example) example = body.example;
+  let word: string | undefined = body.word;
+  let meaning: string | undefined = body.meaning;
+  let example: string | undefined = body.example;
+
+  if (!word || !meaning || !example) {
+    try {
+      const ai = await callOpenAIForWord(theme, level);
+      if (ai) {
+        word = word ?? ai.word;
+        meaning = meaning ?? ai.meaning;
+        example = example ?? ai.example;
+      }
+    } catch (err) {
+      console.error('[generate-word-poster] LLM step failed', err);
+    }
+  }
 
   if (!word || !meaning || !example) {
     return res.status(500).json({ error: 'Failed to obtain word/meaning/example from LLM or request body.' });
