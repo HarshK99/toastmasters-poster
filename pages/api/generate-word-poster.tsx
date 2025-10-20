@@ -204,7 +204,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     `;
 
     // If caller asked for the raw SVG for debugging, return it and the embedded font name
-    const reqBody: any = req.body || {};
+    const reqBody = (req.body || {}) as { returnSvg?: boolean };
     if (reqBody.returnSvg) {
       const respObj = { svg, embeddedFont: embeddedFontFound ? path.basename(embeddedFontFound) : null };
       return res.status(200).json(respObj);
