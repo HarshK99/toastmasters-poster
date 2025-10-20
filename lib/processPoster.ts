@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import sharp from 'sharp';
 
 type JobPayload = { id: string; theme: string; level: string; word?: string; meaning?: string; example?: string };
@@ -13,12 +11,13 @@ export async function generateWordJson(theme: string, level: string) {
   if (key) {
     try {
       const endpoint = 'https://api.openai.com/v1/chat/completions';
+      const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
       const system = `You are a helpful assistant that returns a single English word, its concise one-line meaning, and a short example sentence using the word. Output must be valid JSON with keys: word, meaning, example. Do NOT output any other text.`;
       const prompt = `Generate a ${level} difficulty word related to the theme "${theme}". Return only a JSON object like {"word":"...","meaning":"...","example":"..."}`;
       const resp = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-        body: JSON.stringify({ model: 'gpt-40-mini', messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }], temperature: 0.7, max_tokens: 200 }),
+        body: JSON.stringify({ model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }], temperature: 0.7, max_tokens: 200 }),
       });
       const d = await resp.json();
       const text = d?.choices?.[0]?.message?.content ?? d?.choices?.[0]?.text;
@@ -51,8 +50,8 @@ export async function generateWordJson(theme: string, level: string) {
 }
 
 // onProgress may receive an optional data payload for richer updates
-export async function processPosterJob(payload: JobPayload & { skipIllustration?: boolean }, onProgress: (p: string, data?: unknown) => void) {
-  const { theme, level, skipIllustration } = payload;
+export async function processPosterJob(payload: JobPayload, onProgress: (p: string, data?: unknown) => void) {
+  const { theme, level } = payload;
   // allow caller to pass pre-generated text (jobQueue will do this)
   let word = payload.word || '';
   let meaning = payload.meaning || '';
@@ -77,7 +76,7 @@ export async function processPosterJob(payload: JobPayload & { skipIllustration?
   // before the potentially slow image generation/composition completes.
   try {
     onProgress('text-ready', { word, meaning, example });
-  } catch (err) {
+  } catch {
     // ignore errors from progress handler
   }
 
@@ -85,7 +84,7 @@ export async function processPosterJob(payload: JobPayload & { skipIllustration?
   // Emit an event so callers know illustration is intentionally skipped.
   try {
     onProgress('illustration-skipped', { reason: 'no-illustration' });
-  } catch (e) {
+  } catch {
     // ignore
   }
 
@@ -115,20 +114,41 @@ export async function processPosterJob(payload: JobPayload & { skipIllustration?
 
   const headerHeight = Math.round(height * 0.12);
   const footerHeight = Math.round(height * 0.10);
-  const svg = `...`; // reuse composition from previous file for brevity (omitted in patch)
+
+  const svg = `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .heading { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 40px; fill: #ffffff; letter-spacing: 1px; text-transform: uppercase; }
+        .word { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 88px; font-weight: bold; fill: #0B3D91; }
+        .label { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 36px; fill: #333; font-weight: 700; }
+        .meaning { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 50px; fill: #333; }
+        .example { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 50px; fill: #555; font-style: italic; }
+      </style>
+      <rect x="0" y="0" width="100%" height="${headerHeight}" fill="#0B3D91" />
+      <rect x="0" y="${height - footerHeight}" width="100%" height="${footerHeight}" fill="#0B3D91" />
+      <text x="50%" y="${Math.round(headerHeight * 0.6)}" text-anchor="middle" class="heading">Word of the Day</text>
+      <text x="50%" y="24%" text-anchor="middle" class="word">${escapeXml(payload.word || word)}</text>
+      <g>
+        <text x="50%" y="36%" text-anchor="middle">
+          <tspan class="label" x="50%" dy="0">Meaning</tspan>
+          ${meaningLines.map((l, i) => `<tspan class="meaning" x="50%" dy="${i === 0 ? 1.2 : 1.2}em">${escapeXml(l)}</tspan>`).join('')}
+        </text>
+      </g>
+      <g>
+        <text x="50%" y="60%" text-anchor="middle">
+          <tspan class="label" x="50%" dy="0">Example</tspan>
+          ${exampleLines.map((l, i) => `<tspan class="example" x="50%" dy="${i === 0 ? 1.2 : 1.2}em">${escapeXml(l)}</tspan>`).join('')}
+        </text>
+      </g>
+    </svg>
+  `;
 
   const compositeLayers: { input: Buffer; top: number; left: number }[] = [{ input: Buffer.from(svg), top: 0, left: 0 }];
 
   const finalBuffer = await sharp(bg).composite(compositeLayers).png().toBuffer();
-  const outDir = path.join(process.cwd(), 'public/output');
-  fs.mkdirSync(outDir, { recursive: true });
-  const outName = `word-poster-${Date.now()}.png`;
-  const outPath = path.join(outDir, outName);
-  fs.writeFileSync(outPath, finalBuffer);
-
-  const publicUrl = `${process.env.BASE_URL ?? ''}/output/${outName}`;
+  const dataUrl = `data:image/png;base64,${finalBuffer.toString('base64')}`;
   onProgress('done');
-  return { url: publicUrl, word, meaning, example, illustration: false };
+  return { dataUrl, word, meaning, example, illustration: false };
 }
 
 export default processPosterJob;

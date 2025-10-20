@@ -1,7 +1,5 @@
 // pages/api/generate-word-poster.tsx
 import type { NextApiRequest, NextApiResponse } from "next";
-import fs from "fs";
-import path from "path";
 import sharp from "sharp";
 
 export const config = { api: { bodyParser: true } };
@@ -13,12 +11,13 @@ async function callOpenAIForWord(theme: string, level: string): Promise<WordJson
   if (!key) return null;
   try {
     const endpoint = 'https://api.openai.com/v1/chat/completions';
+    const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
     const system = `You are a helpful assistant that returns a single English word, its concise one-line meaning, and a short example sentence using the word. Output must be valid JSON with keys: word, meaning, example. Do NOT output any other text.`;
     const prompt = `Generate a ${level} difficulty word related to the theme "${theme}". Return only a JSON object like {"word":"...","meaning":"...","example":"..."}`;
     const resp = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model: 'gpt-40-mini', messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }], temperature: 0.7, max_tokens: 200 }),
+      body: JSON.stringify({ model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }], temperature: 0.7, max_tokens: 200 }),
     });
     if (!resp.ok) {
       console.error('[generate-word-poster] OpenAI failed', await resp.text());
@@ -172,16 +171,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .png()
       .toBuffer();
 
-    // Save and return URL
-    const outDir = path.join(process.cwd(), "public/output");
-    fs.mkdirSync(outDir, { recursive: true });
-    const outName = `word-poster-${Date.now()}.png`;
-    const outPath = path.join(outDir, outName);
-    fs.writeFileSync(outPath, finalBuffer);
-  const publicUrl = `${process.env.BASE_URL ?? ""}/output/${outName}`;
-  const respObj: { url: string; word: string; meaning: string; example: string; note?: string } = { url: publicUrl, word, meaning, example };
-  respObj.note = 'Poster created without illustration.';
-  return res.status(200).json(respObj);
+    // Return image as base64 data URL instead of saving to disk
+    const dataUrl = `data:image/png;base64,${finalBuffer.toString('base64')}`;
+    const respObj: { dataUrl: string; word: string; meaning: string; example: string; note?: string } = { dataUrl, word, meaning, example };
+    respObj.note = 'Poster created without illustration (not saved to disk).';
+    return res.status(200).json(respObj);
   } catch (err) {
     console.error("[generate-word-poster] error:", err);
     return res.status(500).json({ error: "Failed to compose poster." });

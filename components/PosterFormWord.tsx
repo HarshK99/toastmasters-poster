@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 
 const PosterFormWord: React.FC = () => {
   const [theme, setTheme] = useState('');
@@ -46,11 +47,11 @@ const PosterFormWord: React.FC = () => {
       });
       const posterData = await posterResponse.json();
 
-      if (!posterResponse.ok || !posterData.url) {
+      if (!posterResponse.ok || !posterData.dataUrl) {
         throw new Error(posterData.error || 'Failed to generate poster.');
       }
 
-      setResultUrl(posterData.url);
+      setResultUrl(posterData.dataUrl);
     } catch (err: unknown) {
       let message: string;
       if (err instanceof Error) {
@@ -115,7 +116,9 @@ const PosterFormWord: React.FC = () => {
           <div className="mt-6">
             <h2 className="text-lg font-medium text-gray-800 mb-3">Poster Result</h2>
             <div className="bg-white p-4 rounded shadow">
-              <img src={resultUrl} alt="Generated Poster" className="max-w-full border" />
+              <div className="max-w-full border inline-block">
+                <Image src={resultUrl} alt="Generated Poster" width={512} height={512} />
+              </div>
               <div className="mt-3">
                 <a href={resultUrl} download className="px-3 py-2 border rounded text-sm">Download</a>
               </div>
