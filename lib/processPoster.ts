@@ -126,6 +126,7 @@ export async function processPosterJob(payload: JobPayload, onProgress: (p: stri
       'Inter-Regular.ttf',
       'Inter-Regular.woff2',
       'Inter-VariableFont_opsz,wght.ttf',
+      'Inter-VariableFont_opsz_wght.ttf',
       'Inter-VariableFont.ttf',
       'inter.ttf',
     ];
