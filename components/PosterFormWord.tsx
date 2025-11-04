@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Image from 'next/image';
 
 type PosterResult = { dataUrl: string; word: string; meaning: string; example: string };
 
@@ -135,7 +134,7 @@ const PosterFormWord: React.FC<{ onResult?: (r: PosterResult) => void }> = ({ on
                       await navigator.clipboard.writeText(text);
                       setCopied(true);
                       setTimeout(() => setCopied(false), 1800);
-                    } catch (e) {
+                    } catch {
                       const ta = document.createElement('textarea');
                       ta.value = text;
                       document.body.appendChild(ta);
