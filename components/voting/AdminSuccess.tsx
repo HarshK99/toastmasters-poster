@@ -28,7 +28,7 @@ const AdminSuccess: React.FC<AdminSuccessProps> = ({
       await navigator.clipboard.writeText(votingLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
+    } catch {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = votingLink;
@@ -51,7 +51,7 @@ const AdminSuccess: React.FC<AdminSuccessProps> = ({
             Voting Session Created Successfully!
           </h2>
           <p className="text-lg text-gray-600 mb-4">
-            Your voting session "{meeting.name}" is ready for member participation.
+            Your voting session &ldquo;{meeting.name}&rdquo; is ready for member participation.
           </p>
           <p className="text-sm text-gray-500">
             Meeting Date: {new Date(meeting.date).toLocaleDateString()}

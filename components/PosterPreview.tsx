@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 interface PosterPreviewProps {
   poster: { dataUrl: string; word: string; meaning: string; example: string } | null;
@@ -10,7 +11,14 @@ const PosterPreview: React.FC<PosterPreviewProps> = ({ poster }) => {
       <div className="bg-white p-6 rounded shadow min-h-[520px] flex flex-col items-center justify-center gap-4">
         {poster ? (
           <div className="text-center">
-            <img src={poster.dataUrl} alt="Poster preview" className="inline-block border" />
+            <Image 
+              src={poster.dataUrl} 
+              alt="Poster preview" 
+              width={400} 
+              height={600} 
+              className="inline-block border" 
+              style={{ width: 'auto', height: 'auto' }}
+            />
             <div className="mt-3">
               <a
                 href={poster.dataUrl}

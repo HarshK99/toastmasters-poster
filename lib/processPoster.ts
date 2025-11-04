@@ -148,7 +148,7 @@ export async function processPosterJob(payload: JobPayload, onProgress: (p: stri
       const mime = found.toLowerCase().endsWith('.woff2') ? 'font/woff2' : 'font/ttf';
       embeddedFontCss = `@font-face{font-family: 'EmbeddedFont'; src: url('data:${mime};base64,${b64}') format('${mime === 'font/woff2' ? 'woff2' : 'truetype'}'); font-weight: 400; font-style: normal;}`;
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 

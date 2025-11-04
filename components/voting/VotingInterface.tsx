@@ -69,7 +69,7 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
       </Card>
 
       <div className="space-y-6">
-        {meeting.roles.map((role, roleIndex) => (
+        {meeting.roles.map((role) => (
           <Card key={role.id}>
             <h3 className="text-lg font-semibold mb-4 text-gray-900">
               {role.name}

@@ -153,7 +153,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
                     <div className="text-center text-gray-500">
                       <div className="text-4xl mb-2">🎭</div>
                       <p>Results Hidden</p>
-                      <p className="text-xs">Click "Reveal Winner" to show</p>
+                      <p className="text-xs">Click &ldquo;Reveal Winner&rdquo; to show</p>
                     </div>
                   </div>
                 )}

@@ -4,7 +4,7 @@ import Button from "@/components/ui/button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/select";
 import Modal from "@/components/ui/Modal";
-import { VotingRole, Meeting, Nominee } from "@/types/voting";
+import { VotingRole, Meeting } from "@/types/voting";
 
 interface AdminSetupProps {
   onMeetingCreated: (meeting: Meeting) => void;
