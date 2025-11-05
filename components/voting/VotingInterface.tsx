@@ -1,18 +1,20 @@
 import React, { useState } from "react";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/button";
-import { Meeting, Vote, Nominee } from "@/types/voting";
+import { Meeting, Nominee } from "@/types/voting";
 
 interface VotingInterfaceProps {
   meeting: Meeting;
-  onVoteSubmitted: (votes: Omit<Vote, "id" | "timestamp">[]) => void;
-  userId: string;
+  onVoteSubmitted: () => Promise<void>;
+  userName: string;
+  userEmail: string;
 }
 
 const VotingInterface: React.FC<VotingInterfaceProps> = ({
   meeting,
   onVoteSubmitted,
-  userId,
+  userName,
+  userEmail,
 }) => {
   const [selectedVotes, setSelectedVotes] = useState<Record<string, Nominee>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,15 +31,32 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
     
     setIsSubmitting(true);
     
-    const votes: Omit<Vote, "id" | "timestamp">[] = Object.entries(selectedVotes).map(([roleId, nominee]) => ({
-      meetingId: meeting.id,
-      roleId,
-      nominee,
-      voterId: userId
-    }));
-
     try {
-      await onVoteSubmitted(votes);
+      // Submit each vote to the API
+      const votePromises = Object.entries(selectedVotes).map(async ([roleId, nominee]) => {
+        const response = await fetch('/api/votes/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            meetingSlug: meeting.slug,
+            roleId,
+            nominee,
+            voterEmail: userEmail,
+            voterName: userName,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to submit vote for ${roleId}`);
+        }
+
+        return response.json();
+      });
+
+      await Promise.all(votePromises);
+      await onVoteSubmitted();  // Trigger parent update
     } finally {
       setIsSubmitting(false);
     }

@@ -5,6 +5,7 @@ import { Meeting } from "@/types/voting";
 
 interface AdminSuccessProps {
   meeting: Meeting;
+  meetingUrl: string;
   onViewResults: () => void;
   onBackToAdmin: () => void;
   onEditSession: () => void;
@@ -13,6 +14,7 @@ interface AdminSuccessProps {
 
 const AdminSuccess: React.FC<AdminSuccessProps> = ({
   meeting,
+  meetingUrl,
   onViewResults,
   onBackToAdmin,
   onEditSession,
@@ -20,18 +22,15 @@ const AdminSuccess: React.FC<AdminSuccessProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
 
-  // Generate the voting link (in a real app, this would be the actual domain)
-  const votingLink = `${window.location.origin}/voting`;
-
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(votingLink);
+      await navigator.clipboard.writeText(meetingUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
-      textArea.value = votingLink;
+      textArea.value = meetingUrl;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
@@ -72,7 +71,7 @@ const AdminSuccess: React.FC<AdminSuccessProps> = ({
         <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4">
           <div className="flex items-center justify-between">
             <code className="text-sm text-gray-800 break-all flex-1 mr-4">
-              {votingLink}
+              {meetingUrl}
             </code>
             <Button
               onClick={copyLink}

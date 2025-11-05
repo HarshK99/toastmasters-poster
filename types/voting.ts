@@ -12,8 +12,10 @@ export interface VotingRole {
 
 export interface Meeting {
   id: string;
+  slug?: string;
   name: string;
   date: string;
+  clubName: string;
   roles: VotingRole[];
   isActive: boolean;
   createdBy: string;
@@ -43,5 +45,6 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  role: 'admin' | 'member';
   isAdmin?: boolean;
 }

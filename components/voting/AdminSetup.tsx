@@ -7,7 +7,7 @@ import Modal from "@/components/ui/Modal";
 import { VotingRole, Meeting } from "@/types/voting";
 
 interface AdminSetupProps {
-  onMeetingCreated: (meeting: Meeting) => void;
+  onMeetingCreated: (meeting: Meeting, url: string) => void;
   existingMeeting?: Meeting | null;
 }
 
@@ -17,14 +17,19 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
     const today = new Date();
     return today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
   });
+  const [clubName, setClubName] = useState("");
+  const [createdBy, setCreatedBy] = useState("");
   const [roles, setRoles] = useState<VotingRole[]>([]);
   const [showAddRole, setShowAddRole] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load existing meeting data for editing
   useEffect(() => {
     if (existingMeeting) {
       setMeetingName(existingMeeting.name);
       setMeetingDate(existingMeeting.date);
+      setClubName(existingMeeting.clubName || "");
+      setCreatedBy(existingMeeting.createdBy || "");
       setRoles(existingMeeting.roles);
     }
   }, [existingMeeting]);
@@ -138,8 +143,11 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
     setRoles(roles.filter(role => role.id !== roleId));
   };
 
-  const createMeeting = () => {
-    if (!meetingName.trim() || !meetingDate || roles.length === 0) return;
+  const createMeeting = async () => {
+    if (!meetingName.trim() || !meetingDate || !clubName.trim() || !createdBy.trim() || roles.length === 0) {
+      alert("Please fill in all required fields and add at least one role.");
+      return;
+    }
     
     // Filter out empty nominees and check if all roles have at least one nominee
     const processedRoles = roles.map(role => ({
@@ -153,24 +161,70 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
       return;
     }
 
-    const meeting: Meeting = {
-      id: existingMeeting?.id || `meeting-${Date.now()}`, // Keep existing ID if editing
-      name: meetingName,
-      date: meetingDate,
-      roles: processedRoles,
-      isActive: true,
-      createdBy: "admin" // This would come from auth in real app
-    };
+    setIsSubmitting(true);
 
-    // Only reset form if creating new (not editing)
-    if (!existingMeeting) {
-      setMeetingName("");
-      setRoles([]);
-      setNewRoleName("");
-      setNominees([""]);
+    try {
+      if (existingMeeting?.slug) {
+        // Update existing meeting
+        const response = await fetch('/api/meetings/update', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            slug: existingMeeting.slug,
+            name: meetingName,
+            date: meetingDate,
+            clubName,
+            roles: processedRoles,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update meeting');
+        }
+
+        const { meeting } = await response.json();
+        const meetingUrl = `${window.location.origin}/voting/${existingMeeting.slug}`;
+        onMeetingCreated(meeting, meetingUrl);
+      } else {
+        // Create new meeting
+        const response = await fetch('/api/meetings/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: meetingName,
+            date: meetingDate,
+            clubName,
+            createdBy,
+            roles: processedRoles,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create meeting');
+        }
+
+        const { meeting, url } = await response.json();
+        
+        // Reset form only for new meetings
+        setMeetingName("");
+        setClubName("");
+        setCreatedBy("");
+        setRoles([]);
+        setNewRoleName("");
+        setNominees([""]);
+
+        onMeetingCreated(meeting, url);
+      }
+    } catch (error) {
+      console.error('Error saving meeting:', error);
+      alert('Failed to save meeting. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onMeetingCreated(meeting);
   };
 
   return (
@@ -205,6 +259,20 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
             type="date"
             value={meetingDate}
             onChange={setMeetingDate}
+            required
+          />
+          <Input
+            label="Club Name"
+            value={clubName}
+            onChange={setClubName}
+            placeholder="e.g., Downtown Toastmasters"
+            required
+          />
+          <Input
+            label="Your Name/Email"
+            value={createdBy}
+            onChange={setCreatedBy}
+            placeholder="e.g., admin@club.com"
             required
           />
         </div>
@@ -288,10 +356,14 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
           <div className="mt-6 pt-6 border-t">
             <Button 
               onClick={createMeeting}
-              disabled={!meetingName || !meetingDate || roles.length === 0}
+              disabled={!meetingName || !meetingDate || !clubName || !createdBy || roles.length === 0 || isSubmitting}
               className="w-full"
             >
-              {existingMeeting ? "Update Voting Session" : "Create Voting Session"}
+              {isSubmitting 
+                ? "Saving..." 
+                : existingMeeting 
+                  ? "Update Voting Session" 
+                  : "Create Voting Session"}
             </Button>
           </div>
         </Card>
