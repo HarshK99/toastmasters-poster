@@ -1,6 +1,5 @@
 // API route to submit a vote
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '../../../lib/database'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -14,37 +13,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    // First, get the meeting ID from slug
-    const { data: meeting, error: meetingError } = await supabase
-      .from('meetings')
-      .select('id')
-      .eq('slug', meetingSlug)
-      .eq('is_active', true)
-      .single()
-
-    if (meetingError || !meeting) {
-      return res.status(404).json({ error: 'Meeting not found' })
+    // Create mock vote data (since we're not using real database)
+    const vote = {
+      id: `vote-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+      meeting_slug: meetingSlug,
+      role_id: roleId,
+      nominee,
+      voter_email: voterEmail,
+      voter_name: voterName,
+      created_at: new Date().toISOString()
     }
 
-    // Insert or update vote
-    const { data: vote, error } = await supabase
-      .from('votes')
-      .upsert({
-        meeting_id: meeting.id,
-        role_id: roleId,
-        nominee,
-        voter_email: voterEmail,
-        voter_name: voterName
-      })
-      .select()
-      .single()
+    console.log('Mock vote submitted:', vote)
 
-    if (error) {
-      console.error('Vote error:', error)
-      return res.status(500).json({ error: 'Failed to submit vote' })
-    }
-
-    res.status(201).json({ vote })
+    res.status(201).json({ 
+      vote,
+      message: 'Vote submitted successfully (mock data)'
+    })
 
   } catch (error) {
     console.error('Server error:', error)

@@ -8,9 +8,11 @@ const Home: NextPage = () => {
   const [poster, setPoster] = useState<{ dataUrl: string; word: string; meaning: string; example: string } | null>(null);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
-      <MainContent poster={poster} onPosterResult={setPoster} />
+      <div className="flex-1 pt-20">
+        <MainContent poster={poster} onPosterResult={setPoster} />
+      </div>
       <Footer />
     </div>
   );

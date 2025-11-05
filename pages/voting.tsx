@@ -105,18 +105,9 @@ const VotingPage: NextPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Admin Voting Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Create and manage Toastmaster voting sessions
-          </p>
-        </div>
-
+      <main className="flex-1 container mx-auto px-4 py-8 pt-24">
         {!isAuthenticated ? (
           <AdminLogin onLogin={handleLogin} />
         ) : meeting && meetingUrl ? (
@@ -131,6 +122,7 @@ const VotingPage: NextPage = () => {
         ) : (
           <AdminSetup
             onMeetingCreated={handleMeetingCreated}
+            adminEmail={adminEmail}
           />
         )}
       </main>

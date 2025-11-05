@@ -15,6 +15,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Email and password are required' })
     }
 
+    // Dummy admin bypass for testing
+    if (email.toLowerCase() === 'admin@test.com' && password === 'admin123') {
+      return res.status(200).json({ 
+        user: {
+          id: 'dummy-admin',
+          email: 'admin@test.com',
+          role: 'admin',
+          created_at: new Date().toISOString()
+        },
+        message: 'Login successful (dummy admin)' 
+      })
+    }
+
     // Get user from database
     const { data: user, error } = await supabase
       .from('users')

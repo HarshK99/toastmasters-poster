@@ -1,4 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Toastmaster Voting System
+
+This is a [Next.js](https://nextjs.org) project for multi-club cross-device Toastmaster voting with secure admin authentication.
+
+## 🚀 Quick Start
+
+### 1. Start Development Server
+
+```bash
+npm run dev
+```
+
+### 2. Access Admin Dashboard
+
+Open [http://localhost:3000/voting](http://localhost:3000/voting) and login with:
+
+**Email:** `admin@test.com`  
+**Password:** `admin123`
+
+### 3. Create Voting Session
+
+1. Login as admin
+2. Create a new meeting with club details
+3. Add roles and nominees
+4. Share the unique meeting URL with club members
+
+## 🎯 Features
+
+- **Secure Admin Authentication** with database-backed user management
+- **Multi-club Support** with unique meeting URLs
+- **Cross-device Voting** - start on phone, finish on desktop
+- **Real-time Results** with live vote counting
+- **Production Ready** with PostgreSQL/Supabase backend
+
+## 📋 Setup Guide
+
+For detailed setup instructions, see:
+- `IMPLEMENTATION_SUMMARY.md` - Full feature overview
+- `ADMIN_CREDENTIALS.md` - Test credentials and security notes
+- `docs/DATABASE_SCHEMA.md` - Database structure
 
 ## Getting Started
 

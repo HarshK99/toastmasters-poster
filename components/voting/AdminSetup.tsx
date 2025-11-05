@@ -9,16 +9,21 @@ import { VotingRole, Meeting } from "@/types/voting";
 interface AdminSetupProps {
   onMeetingCreated: (meeting: Meeting, url: string) => void;
   existingMeeting?: Meeting | null;
+  adminEmail?: string;
 }
 
-const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeting }) => {
-  const [meetingName, setMeetingName] = useState("");
+const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeting, adminEmail }) => {
+  // Meeting date first (required) then optional meeting theme
   const [meetingDate, setMeetingDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
   });
-  const [clubName, setClubName] = useState("");
-  const [createdBy, setCreatedBy] = useState("");
+  const [meetingName, setMeetingName] = useState("");
+
+  // Helper to generate a short random code for meeting slug
+  const generateCode = (len = 6) => {
+    return Math.random().toString(36).replace(/[^a-z0-9]+/g, '').slice(-len);
+  };
   const [roles, setRoles] = useState<VotingRole[]>([]);
   const [showAddRole, setShowAddRole] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,8 +33,6 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
     if (existingMeeting) {
       setMeetingName(existingMeeting.name);
       setMeetingDate(existingMeeting.date);
-      setClubName(existingMeeting.clubName || "");
-      setCreatedBy(existingMeeting.createdBy || "");
       setRoles(existingMeeting.roles);
     }
   }, [existingMeeting]);
@@ -144,8 +147,8 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
   };
 
   const createMeeting = async () => {
-    if (!meetingName.trim() || !meetingDate || !clubName.trim() || !createdBy.trim() || roles.length === 0) {
-      alert("Please fill in all required fields and add at least one role.");
+    if (!meetingDate || roles.length === 0) {
+      alert("Please set the meeting date and add at least one role.");
       return;
     }
     
@@ -173,9 +176,9 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
           },
           body: JSON.stringify({
             slug: existingMeeting.slug,
-            name: meetingName,
+            name: meetingName.trim() || `Meeting - ${meetingDate}`,
             date: meetingDate,
-            clubName,
+            clubName: "Toastmasters Club",
             roles: processedRoles,
           }),
         });
@@ -185,21 +188,27 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
         }
 
         const { meeting } = await response.json();
-        const meetingUrl = `${window.location.origin}/voting/${existingMeeting.slug}`;
+        // extract short code from slug
+        const parts = existingMeeting.slug.split('-');
+        const shortCode = parts[parts.length - 1] || existingMeeting.slug;
+        const meetingUrl = `${window.location.origin}/voting/${shortCode}`;
         onMeetingCreated(meeting, meetingUrl);
       } else {
-        // Create new meeting
+        // Create new meeting - generate a short code and include it in the request
+        const code = generateCode(6);
+
         const response = await fetch('/api/meetings/create', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            name: meetingName,
+            name: meetingName.trim() || `Meeting - ${meetingDate}`,
             date: meetingDate,
-            clubName,
-            createdBy,
+            clubName: "Toastmasters Club",
+            createdBy: adminEmail || "admin",
             roles: processedRoles,
+            code, // include short code for server/storage
           }),
         });
 
@@ -207,17 +216,18 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
           throw new Error('Failed to create meeting');
         }
 
-        const { meeting, url } = await response.json();
-        
+        const { meeting } = await response.json();
+
+        // Build short URL using our generated code
+        const meetingUrl = `${window.location.origin}/voting/${code}`;
+
         // Reset form only for new meetings
         setMeetingName("");
-        setClubName("");
-        setCreatedBy("");
         setRoles([]);
         setNewRoleName("");
         setNominees([""]);
 
-        onMeetingCreated(meeting, url);
+        onMeetingCreated(meeting, meetingUrl);
       }
     } catch (error) {
       console.error('Error saving meeting:', error);
@@ -248,13 +258,6 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Input
-            label="Meeting Name"
-            value={meetingName}
-            onChange={setMeetingName}
-            placeholder="e.g., Weekly Meeting - Dec 2024"
-            required
-          />
-          <Input
             label="Meeting Date"
             type="date"
             value={meetingDate}
@@ -262,23 +265,15 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
             required
           />
           <Input
-            label="Club Name"
-            value={clubName}
-            onChange={setClubName}
-            placeholder="e.g., Downtown Toastmasters"
-            required
-          />
-          <Input
-            label="Your Name/Email"
-            value={createdBy}
-            onChange={setCreatedBy}
-            placeholder="e.g., admin@club.com"
-            required
+            label="Meeting Theme (Optional)"
+            value={meetingName}
+            onChange={setMeetingName}
+            placeholder="e.g., Holiday Special, New Year Kickoff"
           />
         </div>
 
         <div className="flex gap-3 mb-6">
-          <Button onClick={addDefaultRoles} variant="secondary">
+          <Button onClick={addDefaultRoles} variant="primary">
             Add Default Roles
           </Button>
           <Button onClick={() => setShowAddRole(true)} variant="ghost">
@@ -319,7 +314,7 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
                             { value: "TM", label: "TM" },
                             { value: "Guest", label: "Guest" }
                           ]}
-                          className="w-24 flex-shrink-0"
+                          className="w-20 flex-shrink-0"
                         />
                         <Input
                           value={nominee.name}
@@ -356,7 +351,7 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
           <div className="mt-6 pt-6 border-t">
             <Button 
               onClick={createMeeting}
-              disabled={!meetingName || !meetingDate || !clubName || !createdBy || roles.length === 0 || isSubmitting}
+              disabled={!meetingDate || roles.length === 0 || isSubmitting}
               className="w-full"
             >
               {isSubmitting 
