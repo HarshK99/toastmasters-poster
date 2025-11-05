@@ -17,7 +17,7 @@ export default function Select({ label, value, onChange, options = [], className
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 block w-full border border-blue-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-300 transition-all duration-150 shadow-sm hover:border-blue-400 bg-white"
+        className="mt-1 block w-full border border-blue-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-300 transition-all duration-150 hover:border-blue-400 bg-white"
       >
         {options.map((o) =>
           typeof o === "string" ? (
