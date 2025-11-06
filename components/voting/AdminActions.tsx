@@ -3,14 +3,14 @@ import Card from "@/components/ui/Card";
 import Button from "@/components/ui/button";
 
 interface AdminActionsProps {
-  onViewResults: () => void;
+  meetingSlug: string;
   onEditSession: () => void;
   onBackToAdmin: () => void;
   onClearSession: () => void;
 }
 
 const AdminActions: React.FC<AdminActionsProps> = ({
-  onViewResults,
+  meetingSlug,
   onEditSession,
   onBackToAdmin,
   onClearSession,
@@ -20,11 +20,11 @@ const AdminActions: React.FC<AdminActionsProps> = ({
       <h3 className="text-xl font-semibold mb-4">🔧 Admin Actions</h3>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Button
-          onClick={onViewResults}
+          onClick={() => window.open(`/results/${meetingSlug}`, '_blank')}
           className="flex-1"
           size="lg"
         >
-          📊 View Live Results
+          🎭 View Results
         </Button>
         
         <Button

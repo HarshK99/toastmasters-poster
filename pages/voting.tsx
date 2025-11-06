@@ -4,6 +4,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AdminSetup from "@/components/voting/AdminSetup";
 import AdminSuccess from "@/components/voting/AdminSuccess";
+import AdminDashboard from "@/components/voting/AdminDashboard";
+import SessionsList from "@/components/voting/SessionsList";
 import { Meeting } from "@/types/voting";
 
 const AdminLogin = ({ onLogin }: { onLogin: (email: string) => void }) => {
@@ -88,6 +90,7 @@ const VotingPage: NextPage = () => {
   const [adminEmail, setAdminEmail] = useState("");
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [meetingUrl, setMeetingUrl] = useState("");
+  const [currentView, setCurrentView] = useState<'dashboard' | 'create' | 'sessions'>('dashboard');
 
   const handleLogin = (email: string) => {
     setIsAuthenticated(true);
@@ -97,11 +100,21 @@ const VotingPage: NextPage = () => {
   const handleMeetingCreated = (meetingData: Meeting, url: string) => {
     setMeeting(meetingData);
     setMeetingUrl(url);
+    setCurrentView('dashboard'); // Go back to dashboard after creation
   };
 
   const handleBackToAdmin = () => {
     setMeeting(null);
     setMeetingUrl("");
+    setCurrentView('dashboard');
+  };
+
+  const handleViewSessions = () => {
+    setCurrentView('sessions');
+  };
+
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard');
   };
 
   return (
@@ -114,14 +127,24 @@ const VotingPage: NextPage = () => {
           <AdminSuccess 
             meeting={meeting}
             meetingUrl={meetingUrl}
-            onViewResults={() => {}}
             onBackToAdmin={handleBackToAdmin}
             onEditSession={() => {}}
             onClearSession={handleBackToAdmin}
           />
-        ) : (
+        ) : currentView === 'create' ? (
           <AdminSetup
             onMeetingCreated={handleMeetingCreated}
+            adminEmail={adminEmail}
+          />
+        ) : currentView === 'sessions' ? (
+          <SessionsList
+            onBack={handleBackToDashboard}
+            adminEmail={adminEmail}
+          />
+        ) : (
+          <AdminDashboard
+            onCreateNew={() => setCurrentView('create')}
+            onViewSessions={handleViewSessions}
             adminEmail={adminEmail}
           />
         )}

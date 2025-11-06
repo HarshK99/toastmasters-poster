@@ -1,8 +1,7 @@
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
-import { Meeting, VoteResults, User } from '../../types/voting'
+import { Meeting, User } from '../../types/voting'
 import VotingInterface from '../../components/voting/VotingInterface'
-import ResultsDisplay from '../../components/voting/ResultsDisplay'
 import Input from '../../components/ui/Input'
 import Button from '../../components/ui/button'
 
@@ -10,9 +9,7 @@ export default function MeetingVotingPage() {
   const router = useRouter()
   const { meetingId } = router.query
   const [meeting, setMeeting] = useState<Meeting | null>(null)
-  const [results, setResults] = useState<VoteResults[]>([])
   const [user, setUser] = useState<User | null>(null)
-  const [showResults, setShowResults] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -72,31 +69,12 @@ export default function MeetingVotingPage() {
 
   // Handle vote submission
   const handleVoteSubmitted = async () => {
-    // Refresh results after voting
-    if (meeting?.slug) {
-      await loadResults()
-    }
-  }
-
-  // Load voting results
-  const loadResults = async () => {
-    if (!meeting?.slug) return
-
-    try {
-      const response = await fetch(`/api/votes/results?slug=${meeting.slug}`)
-      if (response.ok) {
-        const { results } = await response.json()
-        setResults(results)
-      }
-    } catch (error) {
-      console.error('Failed to load results:', error)
-    }
+    // Vote submitted successfully - no need to reload results since we use dedicated results page
   }
 
   // Handle logout
   const handleLogout = () => {
     setUser(null)
-    setShowResults(false)
     setLoginName('')
     setLoginEmail('')
   }
@@ -154,13 +132,6 @@ export default function MeetingVotingPage() {
               </div>
             </div>
           </div>
-        ) : showResults ? (
-          /* Results View */
-          <ResultsDisplay
-            meeting={meeting}
-            results={results}
-            onClose={() => setShowResults(false)}
-          />
         ) : (
           /* Voting Interface */
           <div className="max-w-4xl mx-auto">
@@ -174,13 +145,10 @@ export default function MeetingVotingPage() {
             {isAdmin && (
               <div className="mt-8 flex justify-center gap-4">
                 <Button 
-                  onClick={() => {
-                    loadResults()
-                    setShowResults(true)
-                  }}
+                  onClick={() => window.open(`/results/${meetingId}`, '_blank')}
                   variant="secondary"
                 >
-                  View Results
+                  🎭 View Results
                 </Button>
                 <Button 
                   onClick={() => router.push('/voting')}
