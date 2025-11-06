@@ -129,24 +129,6 @@ export default function MeetingVotingPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{meeting.name}</h1>
-          <p className="text-gray-600">
-            {meeting.clubName} • {new Date(meeting.date).toLocaleDateString()}
-          </p>
-          {user && (
-            <div className="mt-4 flex items-center justify-center gap-4">
-              <span className="text-sm text-gray-600">
-                Logged in as: <strong>{user.name}</strong>
-              </span>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                Logout
-              </Button>
-            </div>
-          )}
-        </div>
-
         {!user ? (
           /* Login Form */
           <div className="max-w-md mx-auto">
