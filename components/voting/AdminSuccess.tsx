@@ -7,7 +7,6 @@ import AdminActions from "./AdminActions";
 interface AdminSuccessProps {
   meeting: Meeting;
   meetingUrl: string;
-  onViewResults: () => void;
   onBackToAdmin: () => void;
   onEditSession: () => void;
   onClearSession: () => void;
@@ -16,7 +15,6 @@ interface AdminSuccessProps {
 const AdminSuccess: React.FC<AdminSuccessProps> = ({
   meeting,
   meetingUrl,
-  onViewResults,
   onBackToAdmin,
   onEditSession,
   onClearSession,
@@ -26,7 +24,7 @@ const AdminSuccess: React.FC<AdminSuccessProps> = ({
       <SuccessMessage meeting={meeting} />
       <ShareLinkSection meetingUrl={meetingUrl} />
       <AdminActions
-        onViewResults={onViewResults}
+        meetingSlug={meeting.slug || ''}
         onEditSession={onEditSession}
         onBackToAdmin={onBackToAdmin}
         onClearSession={onClearSession}
