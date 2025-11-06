@@ -69,10 +69,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         voteCount[nomineeKey] = (voteCount[nomineeKey] || 0) + 1
       })
 
-      // Sort nominees by vote count
+      // Sort nominees by vote count and calculate percentages
       const sortedResults = Object.entries(voteCount)
-        .map(([nominee, count]) => ({ nominee, count }))
-        .sort((a, b) => b.count - a.count)
+        .map(([nomineeStr, count]) => {
+          const [prefix, ...nameParts] = nomineeStr.split(' ')
+          const name = nameParts.join(' ')
+          const percentage = roleVotes.length > 0 ? (count / roleVotes.length) * 100 : 0
+          
+          return {
+            nominee: { prefix, name },
+            votes: count,
+            percentage: percentage
+          }
+        })
+        .sort((a, b) => b.votes - a.votes)
 
       return {
         roleId: role.id,
