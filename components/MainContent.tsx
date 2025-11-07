@@ -9,7 +9,7 @@ interface MainContentProps {
 
 const MainContent: React.FC<MainContentProps> = ({ poster, onPosterResult }) => {
   return (
-    <main className="pt-28 pb-20">
+    <main className="pt-2 pb-20">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Word of the Day Generator</h2>

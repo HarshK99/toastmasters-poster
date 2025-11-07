@@ -37,7 +37,7 @@ const Header: React.FC = () => {
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               }`}
             >
-              Poster Generator
+              Word of the Day Generator
             </Link>
             <Link
               href="/voting"
@@ -103,7 +103,7 @@ const Header: React.FC = () => {
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               }`}
             >
-              📄 Poster Generator
+              📄 Word of the Day Generator
             </Link>
             <Link
               href="/voting"
