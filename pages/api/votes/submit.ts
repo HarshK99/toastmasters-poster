@@ -2,9 +2,12 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { supabase } from '../../../lib/database'
 
+
+import type { Nominee } from '../../../types/voting';
+
 interface VoteSubmission {
   roleId: string;
-  nominee: any;
+  nominee: Nominee;
 }
 
 interface BulkVoteRequest {
