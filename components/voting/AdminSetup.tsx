@@ -44,8 +44,8 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
     "Best Speaker",
     "Best Table Topics", 
     "Best Evaluator",
-    "Most Helpful Role Player",
-    "Most Encouraging Member"
+    "Best Role Player",
+    "Best Tag Role Player"
   ];
 
   const addDefaultRoles = () => {
