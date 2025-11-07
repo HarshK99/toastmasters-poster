@@ -47,10 +47,6 @@ export default function ResultsPage() {
     loadMeetingAndResults()
   }, [meetingId])
 
-  const handleClose = () => {
-    router.push('/voting')
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -94,7 +90,6 @@ export default function ResultsPage() {
         <ResultsDisplay
           meeting={meeting}
           results={results}
-          onClose={handleClose}
         />
       </div>
       <Footer />

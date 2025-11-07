@@ -1,8 +1,7 @@
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
-import { Meeting, User } from '../../types/voting'
+import { Meeting } from '../../types/voting'
 import VotingInterface from '../../components/voting/VotingInterface'
-import Input from '../../components/ui/Input'
 import Button from '../../components/ui/button'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
@@ -11,14 +10,23 @@ export default function MeetingVotingPage() {
   const router = useRouter()
   const { meetingId } = router.query
   const [meeting, setMeeting] = useState<Meeting | null>(null)
-  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [userId, setUserId] = useState<string>('')
 
-  // Login form state
-  const [loginName, setLoginName] = useState('')
-  const [loginEmail, setLoginEmail] = useState('')
+  // Generate or retrieve user ID from localStorage
+  useEffect(() => {
+    const getOrCreateUserId = () => {
+      let storedUserId = localStorage.getItem('voting_user_id')
+      if (!storedUserId) {
+        storedUserId = `voter_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        localStorage.setItem('voting_user_id', storedUserId)
+      }
+      setUserId(storedUserId)
+    }
+
+    getOrCreateUserId()
+  }, [])
 
   // Load meeting data
   useEffect(() => {
@@ -45,40 +53,9 @@ export default function MeetingVotingPage() {
     loadMeeting()
   }, [meetingId])
 
-  // Check if user is admin
-  useEffect(() => {
-    if (meeting && user) {
-      setIsAdmin(user.email === meeting.createdBy || user.email.includes('admin'))
-    }
-  }, [meeting, user])
-
-  // Handle user login
-  const handleLogin = () => {
-    if (!loginName.trim() || !loginEmail.trim()) {
-      alert('Please enter both name and email')
-      return
-    }
-
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      name: loginName,
-      email: loginEmail,
-      role: loginEmail.includes('admin') ? 'admin' : 'member'
-    }
-
-    setUser(newUser)
-  }
-
   // Handle vote submission
   const handleVoteSubmitted = async () => {
     // Vote submitted successfully - no need to reload results since we use dedicated results page
-  }
-
-  // Handle logout
-  const handleLogout = () => {
-    setUser(null)
-    setLoginName('')
-    setLoginEmail('')
   }
 
   if (loading) {
@@ -118,57 +95,20 @@ export default function MeetingVotingPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
       <div className="flex-1 container mx-auto px-4 py-8 pt-24 sm:pt-28">
-        {!user ? (
-          /* Login Form */
-          <div className="max-w-md mx-auto">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Join Voting Session</h2>
-              <div className="space-y-4">
-                <Input
-                  label="Your Name"
-                  value={loginName}
-                  onChange={setLoginName}
-                  placeholder="Enter your name"
-                />
-                <Input
-                  label="Email"
-                  type="email"
-                  value={loginEmail}
-                  onChange={setLoginEmail}
-                  placeholder="Enter your email"
-                />
-                <Button onClick={handleLogin} className="w-full">
-                  Join Session
-                </Button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Voting Interface */
+        {userId && meeting ? (
           <div className="max-w-4xl mx-auto">
             <VotingInterface
               meeting={meeting}
               onVoteSubmitted={handleVoteSubmitted}
-              userName={user.name}
-              userEmail={user.email}
+              userId={userId}
             />
-            
-            {isAdmin && (
-              <div className="mt-8 flex justify-center gap-4">
-                <Button 
-                  onClick={() => window.open(`/results/${meetingId}`, '_blank')}
-                  variant="secondary"
-                >
-                  🎭 View Results
-                </Button>
-                <Button 
-                  onClick={() => router.push('/voting')}
-                  variant="ghost"
-                >
-                  Back to Admin
-                </Button>
-              </div>
-            )}
+          </div>
+        ) : (
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Setting up your voting session...</p>
+            </div>
           </div>
         )}
       </div>
