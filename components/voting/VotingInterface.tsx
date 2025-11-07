@@ -6,15 +6,13 @@ import { Meeting, Nominee } from "@/types/voting";
 interface VotingInterfaceProps {
   meeting: Meeting;
   onVoteSubmitted: () => Promise<void>;
-  userName: string;
-  userEmail: string;
+  userId: string;
 }
 
 const VotingInterface: React.FC<VotingInterfaceProps> = ({
   meeting,
   onVoteSubmitted,
-  userName,
-  userEmail,
+  userId,
 }) => {
   const [selectedVotes, setSelectedVotes] = useState<Record<string, Nominee>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,13 +20,15 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
   const [existingVotes, setExistingVotes] = useState<Record<string, Nominee>>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing votes when component loads
+  // Check for existing votes in localStorage when component loads
   useEffect(() => {
-    const checkExistingVotes = async () => {
+    const checkExistingVotes = () => {
       try {
-        const response = await fetch(`/api/votes/check?slug=${meeting.slug}&voterEmail=${encodeURIComponent(userEmail)}`);
-        if (response.ok) {
-          const { votedRoles } = await response.json();
+        const cacheKey = `votes_${meeting.slug}_${userId}`;
+        const cachedVotes = localStorage.getItem(cacheKey);
+        
+        if (cachedVotes) {
+          const votedRoles = JSON.parse(cachedVotes);
           setExistingVotes(votedRoles);
           
           // If user has voted for all roles, show success screen
@@ -38,14 +38,14 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
           }
         }
       } catch (error) {
-        console.error('Error checking existing votes:', error);
+        console.error('Error checking cached votes:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     checkExistingVotes();
-  }, [meeting.slug, userEmail, meeting.roles.length]);
+  }, [meeting.slug, userId, meeting.roles.length]);
 
   const handleVoteSelection = (roleId: string, nominee: Nominee) => {
     setSelectedVotes(prev => ({
@@ -60,56 +60,50 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
     setIsSubmitting(true);
     
     try {
-      // Submit each vote to the API
-      const votePromises = Object.entries(selectedVotes).map(async ([roleId, nominee]) => {
-        // Skip if user has already voted for this role
-        if (existingVotes[roleId]) {
-          return { roleId, status: 'already_voted' };
-        }
+      // Filter out votes for roles already voted on (local cache check)
+      const newVotes = Object.entries(selectedVotes)
+        .filter(([roleId]) => !existingVotes[roleId])
+        .map(([roleId, nominee]) => ({
+          roleId,
+          nominee
+        }));
 
-        const response = await fetch('/api/votes/submit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            meetingSlug: meeting.slug,
-            roleId,
-            nominee,
-            voterEmail: userEmail,
-            voterName: userName,
-          }),
-        });
+      if (newVotes.length === 0) {
+        // All votes already submitted
+        setIsSubmitted(true);
+        return;
+      }
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          
-          // Handle already voted error
-          if (response.status === 409 && errorData.code === 'ALREADY_VOTED') {
-            // Update existing votes state
-            setExistingVotes(prev => ({ ...prev, [roleId]: nominee }));
-            return { roleId, status: 'already_voted' };
-          }
-          
-          throw new Error(`Failed to submit vote for ${roleId}: ${errorData.error || response.statusText}`);
-        }
-
-        return response.json();
+      // Submit all votes in a single API call
+      const response = await fetch('/api/votes/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          meetingSlug: meeting.slug,
+          votes: newVotes,
+        }),
       });
 
-      await Promise.all(votePromises);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Failed to submit votes: ${errorData.error || response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Bulk vote submission result:', result);
+      
+      // Store votes in localStorage for future checks
+      const cacheKey = `votes_${meeting.slug}_${userId}`;
+      const allVotes = { ...existingVotes, ...selectedVotes };
+      localStorage.setItem(cacheKey, JSON.stringify(allVotes));
+      
       setIsSubmitted(true);
       await onVoteSubmitted();  // Trigger parent update
     } catch (error) {
       console.error('Vote submission error:', error);
-      
-      // Check if this is a duplicate vote scenario that should be treated as success
-      if (error instanceof Error && error.message.includes('already exists')) {
-        setIsSubmitted(true);
-        await onVoteSubmitted();
-      } else {
-        alert(`Failed to submit votes: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
+      alert(`Failed to submit votes: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -124,7 +118,7 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
         <Card>
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Checking your voting status...</p>
+            <p className="text-gray-600">Loading your voting session...</p>
           </div>
         </Card>
       </div>
@@ -145,9 +139,6 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Votes Submitted Successfully!</h3>
             <p className="text-gray-600 mb-4">
               Thank you for participating in the voting session.
-            </p>
-            <p className="text-sm text-gray-500">
-              Your votes for {Object.keys(selectedVotes).length} categories have been recorded.
             </p>
             <div className="mt-6 pt-6 border-t border-gray-200">
               <h4 className="text-lg font-semibold text-gray-900 mb-3">Your Votes:</h4>

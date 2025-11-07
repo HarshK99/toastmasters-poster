@@ -29,12 +29,10 @@ CREATE TABLE votes (
   meeting_id UUID REFERENCES meetings(id) ON DELETE CASCADE,
   role_id TEXT NOT NULL,
   nominee JSONB NOT NULL,
-  voter_email TEXT NOT NULL,
-  voter_name TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   
-  -- Ensure one vote per role per voter per meeting
-  UNIQUE(meeting_id, role_id, voter_email)
+  -- Allow multiple votes per role per meeting (anonymous voting)
+  -- No unique constraint needed since we handle duplicates via localStorage
 );
 
 -- Create indexes for better performance
@@ -42,7 +40,6 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_meetings_slug ON meetings(slug);
 CREATE INDEX idx_meetings_club ON meetings(club_name);
 CREATE INDEX idx_votes_meeting ON votes(meeting_id);
-CREATE INDEX idx_votes_voter ON votes(voter_email);
 
 -- Row Level Security (RLS) policies
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;

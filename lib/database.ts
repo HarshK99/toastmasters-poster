@@ -36,8 +36,6 @@ export interface DatabaseVote {
     name: string
     prefix: string
   }
-  voter_email: string
-  voter_name: string
   created_at: string
 }
 

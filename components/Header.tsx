@@ -1,25 +1,39 @@
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
 const Header: React.FC = () => {
   const router = useRouter();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
   
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white/60 backdrop-blur-md border-b z-30">
-      <div className="max-w-6xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-800">Toastmasters Tools</h1>
-            <p className="text-sm text-gray-600">Essential tools for better meetings</p>
+    <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        {/* Main header content */}
+        <div className="flex items-center justify-between h-16 sm:h-20">
+          {/* Logo/Brand */}
+          <div className="flex-shrink-0">
+            <Link href="/" className="block">
+              <h1 className="text-lg sm:text-xl font-bold text-gray-800">
+                Toastmasters Tools
+              </h1>
+              <p className="hidden sm:block text-xs text-gray-600">
+                Essential tools for better meetings
+              </p>
+            </Link>
           </div>
           
-          <nav className="flex space-x-4">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex space-x-1">
             <Link
               href="/"
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 router.pathname === "/" 
-                  ? "bg-blue-100 text-blue-700" 
+                  ? "bg-blue-100 text-blue-700 shadow-sm" 
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               }`}
             >
@@ -27,13 +41,80 @@ const Header: React.FC = () => {
             </Link>
             <Link
               href="/voting"
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                router.pathname === "/voting" 
-                  ? "bg-blue-100 text-blue-700" 
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                router.pathname.startsWith("/voting") 
+                  ? "bg-blue-100 text-blue-700 shadow-sm" 
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               }`}
             >
               Voting System
+            </Link>
+          </nav>
+          
+          {/* Mobile menu button */}
+          <button
+            onClick={toggleMobileMenu}
+            className="md:hidden p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            aria-label="Toggle mobile menu"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              {isMobileMenuOpen ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              )}
+            </svg>
+          </button>
+        </div>
+        
+        {/* Mobile Navigation */}
+        <div
+          className={`md:hidden transition-all duration-300 ease-in-out ${
+            isMobileMenuOpen
+              ? "max-h-48 opacity-100 pb-4"
+              : "max-h-0 opacity-0 overflow-hidden"
+          }`}
+        >
+          <nav className="flex flex-col space-y-2 pt-2 border-t border-gray-200">
+            <p className="text-xs text-gray-500 px-2 mb-2">
+              Essential tools for better meetings
+            </p>
+            <Link
+              href="/"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
+                router.pathname === "/" 
+                  ? "bg-blue-100 text-blue-700" 
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              }`}
+            >
+              📄 Poster Generator
+            </Link>
+            <Link
+              href="/voting"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
+                router.pathname.startsWith("/voting") 
+                  ? "bg-blue-100 text-blue-700" 
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              }`}
+            >
+              🗳️ Voting System
             </Link>
           </nav>
         </div>

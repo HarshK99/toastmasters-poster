@@ -13,8 +13,6 @@ interface Vote {
     name: string
     prefix: string
   }
-  voter_email: string
-  voter_name: string
 }
 
 interface MeetingWithVotes {
@@ -45,9 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         *,
         votes (
           role_id,
-          nominee,
-          voter_email,
-          voter_name
+          nominee
         )
       `)
       .eq('slug', slug)
@@ -88,11 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         roleId: role.id,
         roleName: role.name,
         totalVotes: roleVotes.length,
-        results: sortedResults,
-        voters: roleVotes.map((vote: Vote) => ({
-          name: vote.voter_name,
-          email: vote.voter_email
-        }))
+        results: sortedResults
       }
     })
 

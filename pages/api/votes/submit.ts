@@ -1,6 +1,19 @@
-// API route to submit a vote
+// API route to submit votes in bulk
 import { NextApiRequest, NextApiResponse } from 'next'
 import { supabase } from '../../../lib/database'
+
+
+import type { Nominee } from '../../../types/voting';
+
+interface VoteSubmission {
+  roleId: string;
+  nominee: Nominee;
+}
+
+interface BulkVoteRequest {
+  meetingSlug: string;
+  votes: VoteSubmission[];
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -8,12 +21,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { meetingSlug, roleId, nominee, voterEmail, voterName } = req.body
+    const { meetingSlug, votes }: BulkVoteRequest = req.body
 
-    console.log('Vote submission request:', { meetingSlug, roleId, nominee, voterEmail, voterName })
+    console.log('Bulk vote submission request:', { meetingSlug, votesCount: votes?.length })
 
-    if (!meetingSlug || !roleId || !nominee || !voterEmail || !voterName) {
-      return res.status(400).json({ error: 'Missing required fields' })
+    if (!meetingSlug || !votes || !Array.isArray(votes) || votes.length === 0) {
+      return res.status(400).json({ error: 'Missing required fields: meetingSlug and votes array' })
+    }
+
+    // Validate each vote has required fields
+    for (const vote of votes) {
+      if (!vote.roleId || !vote.nominee) {
+        return res.status(400).json({ error: 'Each vote must have roleId and nominee' })
+      }
     }
 
     // First, get the meeting ID from slug
@@ -31,57 +51,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('Found meeting:', meeting)
 
-    // Check if user has already voted for this role
-    const { data: existingVote, error: checkError } = await supabase
+    // Prepare votes for bulk insertion
+    const votesToInsert = votes.map((vote: VoteSubmission) => ({
+      meeting_id: meeting.id,
+      role_id: vote.roleId,
+      nominee: vote.nominee
+    }))
+
+    console.log('Inserting votes:', votesToInsert)
+
+    // Insert all votes in a single transaction
+    const { data: insertedVotes, error } = await supabase
       .from('votes')
-      .select('id')
-      .eq('meeting_id', meeting.id)
-      .eq('role_id', roleId)
-      .eq('voter_email', voterEmail)
-      .single()
-
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
-      console.error('Error checking existing vote:', checkError)
-      return res.status(500).json({ error: 'Failed to check existing votes' })
-    }
-
-    if (existingVote) {
-      return res.status(409).json({ 
-        error: 'You have already voted for this role',
-        code: 'ALREADY_VOTED',
-        roleId
-      })
-    }
-
-    // Insert new vote
-    const { data: vote, error } = await supabase
-      .from('votes')
-      .insert({
-        meeting_id: meeting.id,
-        role_id: roleId,
-        nominee,
-        voter_email: voterEmail,
-        voter_name: voterName
-      })
+      .insert(votesToInsert)
       .select()
-      .single()
 
     if (error) {
-      console.error('Vote error:', error)
-      
-      // Handle specific constraint violation
-      if (error.code === '23505') {
-        return res.status(409).json({ 
-          error: 'Vote already exists for this role. Please refresh and try again.',
-          code: 'DUPLICATE_VOTE'
-        })
-      }
-      
-      return res.status(500).json({ error: 'Failed to submit vote' })
+      console.error('Bulk vote error:', error)
+      return res.status(500).json({ error: 'Failed to submit votes' })
     }
 
-    console.log('Vote submitted successfully:', vote)
-    res.status(201).json({ vote })
+    console.log('Votes submitted successfully:', insertedVotes.length)
+    res.status(201).json({ 
+      success: true, 
+      message: `${insertedVotes.length} votes submitted successfully`,
+      votes: insertedVotes
+    })
 
   } catch (error) {
     console.error('Server error:', error)
