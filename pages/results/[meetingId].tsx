@@ -53,9 +53,9 @@ export default function ResultsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
-        <div className="flex items-center justify-center py-20 pt-32">
+        <div className="flex-1 flex items-center justify-center pt-24 sm:pt-28">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading results...</p>
@@ -68,9 +68,9 @@ export default function ResultsPage() {
 
   if (error || !meeting) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
-        <div className="flex items-center justify-center py-20 pt-32">
+        <div className="flex-1 flex items-center justify-center pt-24 sm:pt-28">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600 mb-4">Results Not Found</h1>
             <p className="text-gray-600 mb-4">{error || 'The results you are looking for do not exist.'}</p>
@@ -88,9 +88,9 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
-      <div className="container mx-auto px-4 py-8 pt-24">
+      <div className="flex-1 container mx-auto px-4 py-8 pt-24 sm:pt-28">
         <ResultsDisplay
           meeting={meeting}
           results={results}

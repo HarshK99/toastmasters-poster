@@ -6,12 +6,14 @@ interface AdminDashboardProps {
   onCreateNew: () => void;
   onViewSessions: () => void;
   adminEmail: string;
+  onLogout?: () => void;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onCreateNew,
   onViewSessions,
   adminEmail,
+  onLogout,
 }) => {
   return (
     <div className="max-w-2xl mx-auto">
@@ -19,6 +21,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin Dashboard</h2>
           <p className="text-gray-600">Welcome back, {adminEmail.split('@')[0]}</p>
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="mt-2 text-sm text-gray-500 hover:text-red-600 underline"
+            >
+              Logout
+            </button>
+          )}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

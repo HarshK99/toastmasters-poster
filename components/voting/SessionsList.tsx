@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/Card";
 import { Meeting } from "@/types/voting";
 
 interface SessionsListProps {
-  onBack: () => void;
   adminEmail: string;
 }
 
 const SessionsList: React.FC<SessionsListProps> = ({
-  onBack,
   adminEmail,
 }) => {
+  const router = useRouter();
   const [sessions, setSessions] = useState<Meeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -53,53 +53,57 @@ const SessionsList: React.FC<SessionsListProps> = ({
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-2 sm:px-4">
       <div className="mb-6">
-        <Button onClick={onBack} variant="ghost" className="mb-4">
-          ← Back to Dashboard
-        </Button>
-        <h2 className="text-2xl font-bold text-gray-900">Voting Sessions</h2>
-        <p className="text-gray-600">Manage your voting sessions and view results</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Voting Sessions</h2>
+        <p className="text-sm sm:text-base text-gray-600">Manage your voting sessions and view results</p>
       </div>
 
       {sessions.length === 0 ? (
         <Card>
           <div className="text-center py-8">
             <p className="text-gray-600 mb-4">No voting sessions found</p>
-            <Button onClick={onBack}>Create Your First Session</Button>
+            <Button onClick={() => router.push('/voting/admin/create')}>Create Your First Session</Button>
           </div>
         </Card>
       ) : (
         <div className="space-y-4">
           {sessions.map((session) => (
             <Card key={session.id}>
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold text-gray-900">{session.name}</h3>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      session.isActive 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-gray-100 text-gray-600"
-                    }`}>
-                      {session.isActive ? "Active" : "Ended"}
-                    </span>
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                <div className="flex justify-between items-start w-full sm:flex-1">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      <h3 className="text-lg font-semibold text-gray-900 truncate">{session.name}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium self-start ${
+                        session.isActive 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-gray-100 text-gray-600"
+                      }`}>
+                        {session.isActive ? "Active" : "Ended"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Meeting Code: {session.slug}
+                    </p>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {session.clubName} • {new Date(session.date).toLocaleDateString()}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    URL: /voting/{session.slug}
-                  </p>
+                  
+                  <div className="text-sm font-medium text-gray-600 ml-4">
+                    {new Date(session.date).toLocaleDateString('en-GB', { 
+                      day: 'numeric', 
+                      month: 'short' 
+                    })}
+                  </div>
                 </div>
                 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 sm:ml-4">
                   <Button
                     onClick={() => {
                       window.open(`/results/${session.slug}`, '_blank');
                     }}
                     variant="secondary"
                     size="sm"
+                    className="w-full sm:w-auto text-xs sm:text-sm"
                   >
                     🎭 View Results
                   </Button>
@@ -111,6 +115,7 @@ const SessionsList: React.FC<SessionsListProps> = ({
                     }}
                     variant="ghost"
                     size="sm"
+                    className="w-full sm:w-auto text-xs sm:text-sm"
                   >
                     📋 Copy Link
                   </Button>

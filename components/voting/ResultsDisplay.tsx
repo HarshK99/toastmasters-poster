@@ -29,36 +29,55 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
     setRevealedRoles(new Set());
   };
 
-  const getWinner = (roleResults: VoteResults) => {
+  const getWinners = (roleResults: VoteResults) => {
     if (!roleResults.results || roleResults.results.length === 0) {
-      return null;
+      return [];
     }
-    return roleResults.results.reduce((prev, current) => 
-      prev.votes > current.votes ? prev : current
-    );
+    
+    const maxVotes = Math.max(...roleResults.results.map(r => r.votes));
+    return roleResults.results.filter(r => r.votes === maxVotes);
+  };
+
+  const copyResults = () => {
+    const date = new Date(meeting.date).toLocaleDateString();
+    let resultText = `Congratulations to the winners of the meeting on ${date}\n\n`;
+    
+    results.forEach(roleResult => {
+      const winners = getWinners(roleResult);
+      if (winners.length > 0) {
+        const winnerNames = winners.map(w => `${w.nominee.prefix} ${w.nominee.name}`).join(', ');
+        resultText += `${roleResult.roleName}: ${winnerNames}\n`;
+      }
+    });
+    
+    navigator.clipboard.writeText(resultText).then(() => {
+      alert('Results copied to clipboard!');
+    }).catch(() => {
+      alert('Failed to copy results to clipboard');
+    });
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Control Panel */}
       <Card>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{meeting.name} - Results</h2>
-            <p className="text-gray-600">Meeting Date: {new Date(meeting.date).toLocaleDateString()}</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{meeting.name} - Results</h2>
+            <p className="text-sm sm:text-base text-gray-600">Meeting Date: {new Date(meeting.date).toLocaleDateString()}</p>
           </div>
           
-          <div className="flex gap-3">
-            <Button onClick={resetReveal} variant="secondary" size="sm">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <Button onClick={resetReveal} variant="secondary" size="sm" className="w-full sm:w-auto">
               Reset Reveals
             </Button>
             
-            <Button onClick={revealAll} variant="ghost" size="sm">
+            <Button onClick={revealAll} variant="ghost" size="sm" className="w-full sm:w-auto">
               Reveal All
             </Button>
             
-            <Button onClick={onClose} variant="secondary">
-              Close Results
+            <Button onClick={copyResults} variant="secondary" size="sm" className="w-full sm:w-auto">
+              📋 Copy Results
             </Button>
           </div>
         </div>
@@ -68,7 +87,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {results.map((roleResult) => {
           const isRevealed = revealedRoles.has(roleResult.roleId);
-          const winner = getWinner(roleResult);
+          const winners = getWinners(roleResult);
           
           return (
             <Card key={roleResult.roleId} className="relative">
@@ -92,17 +111,24 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
                 {isRevealed ? (
                   <>
                     {/* Winner Announcement */}
-                    {winner ? (
+                    {winners.length > 0 ? (
                       <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-4">
-                        <div className="flex items-center">
+                        <div className="flex items-start">
                           <div className="text-2xl mr-3">🏆</div>
-                          <div>
-                            <div className="font-bold text-lg text-yellow-800">
-                              {winner.nominee.prefix} {winner.nominee.name}
+                          <div className="flex-1">
+                            <div className="text-lg text-yellow-800 mb-2">
+                              {winners.length === 1 ? 'Winner:' : `Winners:`}
                             </div>
-                            <div className="text-sm text-yellow-700">
-                              {winner.votes} votes ({(winner.percentage || 0).toFixed(1)}%)
-                            </div>
+                            {winners.map((winner, index) => (
+                              <div key={`${winner.nominee.name}-${winner.nominee.prefix}`} className="mb-1 last:mb-0">
+                                <div className="font-semibold text-yellow-800">
+                                  {winner.nominee.prefix} {winner.nominee.name}
+                                </div>
+                                <div className="text-sm text-yellow-700">
+                                  {winner.votes} votes ({(winner.percentage || 0).toFixed(1)}%)
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -119,41 +145,45 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
                       <div className="space-y-2">
                         {roleResult.results
                           .sort((a, b) => b.votes - a.votes)
-                          .map((result, index) => (
-                            <div
-                              key={`${result.nominee.name}-${result.nominee.prefix}`}
-                              className={`flex items-center justify-between p-3 rounded-lg ${
-                                index === 0 
-                                  ? "bg-yellow-100 border border-yellow-300" 
-                                  : "bg-gray-50"
-                              }`}
-                            >
-                              <div className="flex items-center">
-                                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-3 ${
-                                  index === 0 
-                                    ? "bg-yellow-500 text-white" 
-                                    : "bg-gray-300 text-gray-700"
-                                }`}>
-                                  {index + 1}
-                                </span>
-                                <span className="font-medium">{result.nominee.prefix} {result.nominee.name}</span>
-                              </div>
-                              
-                              <div className="flex items-center">
-                                <div className="w-24 bg-gray-200 rounded-full h-2 mr-3">
-                                  <div
-                                    className={`h-2 rounded-full ${
-                                      index === 0 ? "bg-yellow-500" : "bg-blue-500"
-                                    }`}
-                                    style={{ width: `${result.percentage || 0}%` }}
-                                  ></div>
+                          .map((result, index) => {
+                            const isWinner = winners.some(w => w.nominee.name === result.nominee.name && w.nominee.prefix === result.nominee.prefix);
+                            
+                            return (
+                              <div
+                                key={`${result.nominee.name}-${result.nominee.prefix}`}
+                                className={`flex items-center justify-between p-3 rounded-lg ${
+                                  isWinner 
+                                    ? "bg-yellow-100 border border-yellow-300" 
+                                    : "bg-gray-50"
+                                }`}
+                              >
+                                <div className="flex items-center">
+                                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-3 ${
+                                    isWinner 
+                                      ? "bg-yellow-500 text-white" 
+                                      : "bg-gray-300 text-gray-700"
+                                  }`}>
+                                    {index + 1}
+                                  </span>
+                                  <span className="font-medium">{result.nominee.prefix} {result.nominee.name}</span>
                                 </div>
-                                <span className="text-sm font-medium w-12 text-right">
-                                  {result.votes}
-                                </span>
+                                
+                                <div className="flex items-center">
+                                  <div className="w-24 bg-gray-200 rounded-full h-2 mr-3">
+                                    <div
+                                      className={`h-2 rounded-full ${
+                                        isWinner ? "bg-yellow-500" : "bg-blue-500"
+                                      }`}
+                                      style={{ width: `${result.percentage || 0}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="text-sm font-medium w-12 text-right">
+                                    {result.votes}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                       </div>
                     ) : (
                       <div className="text-center text-gray-500 py-4">

@@ -1,12 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { NextPage } from "next";
+import { useRouter } from "next/router";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AdminSetup from "@/components/voting/AdminSetup";
-import AdminSuccess from "@/components/voting/AdminSuccess";
-import AdminDashboard from "@/components/voting/AdminDashboard";
-import SessionsList from "@/components/voting/SessionsList";
-import { Meeting } from "@/types/voting";
 
 const AdminLogin = ({ onLogin }: { onLogin: (email: string) => void }) => {
   const [email, setEmail] = useState("");
@@ -86,68 +82,44 @@ const AdminLogin = ({ onLogin }: { onLogin: (email: string) => void }) => {
 };
 
 const VotingPage: NextPage = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [adminEmail, setAdminEmail] = useState("");
-  const [meeting, setMeeting] = useState<Meeting | null>(null);
-  const [meetingUrl, setMeetingUrl] = useState("");
-  const [currentView, setCurrentView] = useState<'dashboard' | 'create' | 'sessions'>('dashboard');
+  const router = useRouter();
+
+  // Check if already logged in
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('adminEmail');
+    const loginTime = localStorage.getItem('adminLoginTime');
+    
+    if (storedEmail && loginTime) {
+      const now = Date.now();
+      const loginTimeMs = parseInt(loginTime);
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      
+      if (now - loginTimeMs < twentyFourHours) {
+        // Still logged in, redirect to dashboard
+        router.push('/voting/admin/dashboard');
+        return;
+      } else {
+        // Session expired, clear storage
+        localStorage.removeItem('adminEmail');
+        localStorage.removeItem('adminLoginTime');
+      }
+    }
+  }, [router]);
 
   const handleLogin = (email: string) => {
-    setIsAuthenticated(true);
-    setAdminEmail(email);
-  };
-
-  const handleMeetingCreated = (meetingData: Meeting, url: string) => {
-    setMeeting(meetingData);
-    setMeetingUrl(url);
-    setCurrentView('dashboard'); // Go back to dashboard after creation
-  };
-
-  const handleBackToAdmin = () => {
-    setMeeting(null);
-    setMeetingUrl("");
-    setCurrentView('dashboard');
-  };
-
-  const handleViewSessions = () => {
-    setCurrentView('sessions');
-  };
-
-  const handleBackToDashboard = () => {
-    setCurrentView('dashboard');
+    // Store login info
+    localStorage.setItem('adminEmail', email);
+    localStorage.setItem('adminLoginTime', Date.now().toString());
+    
+    // Redirect to dashboard
+    router.push('/voting/admin/dashboard');
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 pt-24">
-        {!isAuthenticated ? (
-          <AdminLogin onLogin={handleLogin} />
-        ) : meeting && meetingUrl ? (
-          <AdminSuccess 
-            meeting={meeting}
-            meetingUrl={meetingUrl}
-            onBackToAdmin={handleBackToAdmin}
-            onEditSession={() => {}}
-            onClearSession={handleBackToAdmin}
-          />
-        ) : currentView === 'create' ? (
-          <AdminSetup
-            onMeetingCreated={handleMeetingCreated}
-            adminEmail={adminEmail}
-          />
-        ) : currentView === 'sessions' ? (
-          <SessionsList
-            onBack={handleBackToDashboard}
-            adminEmail={adminEmail}
-          />
-        ) : (
-          <AdminDashboard
-            onCreateNew={() => setCurrentView('create')}
-            onViewSessions={handleViewSessions}
-            adminEmail={adminEmail}
-          />
-        )}
+      <main className="flex-1 container mx-auto px-4 py-8 pt-24 sm:pt-28">
+        <AdminLogin onLogin={handleLogin} />
       </main>
       <Footer />
     </div>

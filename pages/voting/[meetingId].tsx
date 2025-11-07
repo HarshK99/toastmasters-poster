@@ -4,6 +4,8 @@ import { Meeting, User } from '../../types/voting'
 import VotingInterface from '../../components/voting/VotingInterface'
 import Input from '../../components/ui/Input'
 import Button from '../../components/ui/button'
+import Header from '../../components/Header'
+import Footer from '../../components/Footer'
 
 export default function MeetingVotingPage() {
   const router = useRouter()
@@ -81,32 +83,41 @@ export default function MeetingVotingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading meeting...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center pt-24 sm:pt-28">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading meeting...</p>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
   if (error || !meeting) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Meeting Not Found</h1>
-          <p className="text-gray-600 mb-4">{error || 'The meeting you are looking for does not exist.'}</p>
-          <Button onClick={() => router.push('/voting')}>
-            Back to Voting
-          </Button>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center pt-24 sm:pt-28">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">Meeting Not Found</h1>
+            <p className="text-gray-600 mb-4">{error || 'The meeting you are looking for do not exist.'}</p>
+            <Button onClick={() => router.push('/voting')}>
+              Back to Voting
+            </Button>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header />
+      <div className="flex-1 container mx-auto px-4 py-8 pt-24 sm:pt-28">
         {!user ? (
           /* Login Form */
           <div className="max-w-md mx-auto">
@@ -161,6 +172,7 @@ export default function MeetingVotingPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   )
 }
