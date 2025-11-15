@@ -30,6 +30,8 @@ const ResultsSummary: React.FC<ResultsSummaryProps> = ({ results, revealedCount 
       })()
     : totalVotes;
 
+  const votersPerCategory = results.length > 0 ? Math.round(uniqueVoterCount / results.length) : 0;
+
   return (
     <Card>
       <h3 className="text-lg font-semibold mb-4">Meeting Summary</h3>
@@ -42,9 +44,9 @@ const ResultsSummary: React.FC<ResultsSummaryProps> = ({ results, revealedCount 
         </div>
         <div>
           <div className="text-2xl font-bold text-green-600">
-            {uniqueVoterCount} / {results.length}
+            {votersPerCategory}
           </div>
-          <div className="text-sm text-gray-600">Total Voters (current count / categories)</div>
+          <div className="text-sm text-gray-600">Total Voters</div>
         </div>
         <div>
           <div className="text-2xl font-bold text-purple-600">
