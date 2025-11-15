@@ -42,9 +42,9 @@ const ResultsSummary: React.FC<ResultsSummaryProps> = ({ results, revealedCount 
         </div>
         <div>
           <div className="text-2xl font-bold text-green-600">
-            {uniqueVoterCount}
+            {uniqueVoterCount} / {results.length}
           </div>
-          <div className="text-sm text-gray-600">Total Voters</div>
+          <div className="text-sm text-gray-600">Total Voters (current count / categories)</div>
         </div>
         <div>
           <div className="text-2xl font-bold text-purple-600">
