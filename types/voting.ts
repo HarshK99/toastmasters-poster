@@ -40,6 +40,7 @@ export interface VoteResults {
     percentage: number;
   }[];
   totalVotes: number;
+  voters?: Array<{ name?: string; email?: string } | string>;
 }
 
 export interface User {

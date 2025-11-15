@@ -45,7 +45,7 @@ const VoteResultItem: React.FC<VoteResultItemProps> = ({ result, position, isWin
             style={{ width: `${result.percentage || 0}%` }}
           ></div>
         </div>
-        <span className="text-sm font-medium w-12 text-right">
+        <span className="text-sm font-medium w-12 text-right text-gray-800 dark:text-gray-100">
           {result.votes}
         </span>
       </div>

@@ -38,7 +38,7 @@ const WinnerAnnouncement: React.FC<WinnerAnnouncementProps> = ({ winners }) => {
               <div className="font-semibold text-yellow-800">
                 {winner.nominee.prefix} {winner.nominee.name}{winner.nominee.suffix ? ` (${winner.nominee.suffix})` : ''}
               </div>
-              <div className="text-sm text-yellow-700">
+              <div className="text-sm text-yellow-800">
                 {winner.votes} votes ({(winner.percentage || 0).toFixed(1)}%)
               </div>
             </div>

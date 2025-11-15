@@ -8,9 +8,27 @@ interface ResultsSummaryProps {
 }
 
 const ResultsSummary: React.FC<ResultsSummaryProps> = ({ results, revealedCount }) => {
-  if (revealedCount === 0) return null;
 
   const totalVotes = results.reduce((sum, r) => sum + r.totalVotes, 0);
+  // If API provides voter lists per role, count unique voters across roles
+  const hasVoterLists = results.some(r => r.voters && Array.isArray(r.voters));
+  const uniqueVoterCount = hasVoterLists
+    ? (() => {
+        const set = new Set<string>();
+        results.forEach(r => {
+          const voters = r.voters;
+          if (Array.isArray(voters)) {
+            voters.forEach((v) => {
+              if (!v) return;
+              if (typeof v === 'string') set.add(v);
+              else if ('email' in v && v.email) set.add(String(v.email));
+              else if ('name' in v && v.name) set.add(String(v.name));
+            });
+          }
+        });
+        return set.size;
+      })()
+    : totalVotes;
 
   return (
     <Card>
@@ -24,9 +42,9 @@ const ResultsSummary: React.FC<ResultsSummaryProps> = ({ results, revealedCount 
         </div>
         <div>
           <div className="text-2xl font-bold text-green-600">
-            {totalVotes}
+            {uniqueVoterCount}
           </div>
-          <div className="text-sm text-gray-600">Total Votes Cast</div>
+          <div className="text-sm text-gray-600">Total Voters</div>
         </div>
         <div>
           <div className="text-2xl font-bold text-purple-600">
