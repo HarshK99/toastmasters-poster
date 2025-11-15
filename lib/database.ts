@@ -22,6 +22,7 @@ export interface DatabaseMeeting {
     nominees: Array<{
       name: string
       prefix: string
+      suffix?: string
     }>
   }>
   created_at: string
@@ -35,6 +36,7 @@ export interface DatabaseVote {
   nominee: {
     name: string
     prefix: string
+    suffix?: string
   }
   created_at: string
 }

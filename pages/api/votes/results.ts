@@ -12,6 +12,7 @@ interface Vote {
   nominee: {
     name: string
     prefix: string
+    suffix?: string
   }
 }
 
@@ -61,19 +62,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const voteCount: { [key: string]: number } = {}
       roleVotes.forEach((vote: Vote) => {
-        const nomineeKey = `${vote.nominee.prefix} ${vote.nominee.name}`
+        const nomineeKey = `${vote.nominee.prefix}|${vote.nominee.name}|${vote.nominee.suffix || ''}`
         voteCount[nomineeKey] = (voteCount[nomineeKey] || 0) + 1
       })
 
       // Sort nominees by vote count and calculate percentages
       const sortedResults = Object.entries(voteCount)
-        .map(([nomineeStr, count]) => {
-          const [prefix, ...nameParts] = nomineeStr.split(' ')
-          const name = nameParts.join(' ')
+        .map(([nomineeKey, count]) => {
+          const [prefix, name, suffix] = nomineeKey.split('|')
           const percentage = roleVotes.length > 0 ? (count / roleVotes.length) * 100 : 0
-          
+
           return {
-            nominee: { prefix, name },
+            nominee: { prefix, name, suffix: suffix || undefined },
             votes: count,
             percentage: percentage
           }

@@ -4,6 +4,7 @@ interface Winner {
   nominee: {
     name: string;
     prefix: string;
+    suffix?: string;
   };
   votes: number;
   percentage?: number;
@@ -33,9 +34,9 @@ const WinnerAnnouncement: React.FC<WinnerAnnouncementProps> = ({ winners }) => {
             {winners.length === 1 ? 'Winner:' : 'Winners:'}
           </div>
           {winners.map((winner) => (
-            <div key={`${winner.nominee.name}-${winner.nominee.prefix}`} className="mb-1 last:mb-0">
+            <div key={`${winner.nominee.name}-${winner.nominee.prefix}-${winner.nominee.suffix || ''}`} className="mb-1 last:mb-0">
               <div className="font-semibold text-yellow-800">
-                {winner.nominee.prefix} {winner.nominee.name}
+                {winner.nominee.prefix} {winner.nominee.name}{winner.nominee.suffix ? ` (${winner.nominee.suffix})` : ''}
               </div>
               <div className="text-sm text-yellow-700">
                 {winner.votes} votes ({(winner.percentage || 0).toFixed(1)}%)

@@ -35,7 +35,7 @@ const Header: React.FC = () => {
                 router.pathname === "/" 
                   ? "bg-blue-100 text-blue-700 shadow-sm" 
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              }`}
+              } ${router.pathname.startsWith('/voting') ? 'glow-once' : ''}`}
             >
               Word of the Day Generator
             </Link>
@@ -101,7 +101,7 @@ const Header: React.FC = () => {
                 router.pathname === "/" 
                   ? "bg-blue-100 text-blue-700" 
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              }`}
+              } ${router.pathname.startsWith('/voting') ? 'glow-once' : ''}`}
             >
               📄 Word of the Day Generator
             </Link>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/button";
+import Loading from '@/components/ui/Loading'
 import { Meeting, Nominee } from "@/types/voting";
 
 interface VotingInterfaceProps {
@@ -115,14 +117,9 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
-        <Card>
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your voting session...</p>
-          </div>
-        </Card>
+        <Loading message="Loading your voting session..." variant="card" />
       </div>
-    );
+    )
   }
 
   return (
@@ -148,7 +145,7 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
                   return (
                     <div key={roleId} className="flex justify-between items-center py-2 px-4 bg-gray-50 rounded-lg">
                       <span className="font-medium text-gray-700">{role?.name}</span>
-                      <span className="text-gray-900">{nominee.prefix} {nominee.name}</span>
+                      <span className="text-gray-900">{nominee.prefix} {nominee.name}{nominee.suffix ? ` (${nominee.suffix})` : ''}</span>
                     </div>
                   );
                 })}
@@ -215,10 +212,10 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {role.nominees.map((nominee, nomineeIndex) => (
                   <button
-                    key={`${nominee.name}-${nominee.prefix}-${nomineeIndex}`}
+                    key={`${nominee.name}-${nominee.prefix}-${(nominee.suffix||'')}-${nomineeIndex}`}
                     onClick={() => handleVoteSelection(role.id, nominee)}
                     className={`p-4 rounded-lg border-2 transition-all text-left ${
-                      selectedVotes[role.id]?.name === nominee.name && selectedVotes[role.id]?.prefix === nominee.prefix
+                      selectedVotes[role.id]?.name === nominee.name && selectedVotes[role.id]?.prefix === nominee.prefix && (selectedVotes[role.id]?.suffix || '') === (nominee.suffix || '')
                         ? "border-blue-500 bg-blue-50 text-blue-900"
                         : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                     }`}
@@ -234,7 +231,7 @@ const VotingInterface: React.FC<VotingInterfaceProps> = ({
                         )}
                       </div>
                       <div>
-                        <span className="font-medium">{nominee.prefix} {nominee.name}</span>
+                        <span className="font-medium">{nominee.prefix} {nominee.name}{nominee.suffix ? ` (${nominee.suffix})` : ''}</span>
                       </div>
                     </div>
                   </button>

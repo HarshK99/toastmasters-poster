@@ -4,6 +4,7 @@ import { Meeting, VoteResults } from '../../types/voting'
 import ResultsDisplay from '../../components/voting/ResultsDisplay'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
+import Loading from '@/components/ui/Loading'
 
 export default function ResultsPage() {
   const router = useRouter()
@@ -51,12 +52,7 @@ export default function ResultsPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
-        <div className="flex-1 flex items-center justify-center pt-24 sm:pt-28">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading results...</p>
-          </div>
-        </div>
+        <Loading message="Loading results..." variant="center" className="pt-24 sm:pt-28" />
         <Footer />
       </div>
     )

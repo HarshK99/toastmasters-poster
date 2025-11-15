@@ -2,6 +2,7 @@
 export interface Nominee {
   name: string;
   prefix: "TM" | "Guest";
+  suffix?: string;
 }
 
 export interface VotingRole {

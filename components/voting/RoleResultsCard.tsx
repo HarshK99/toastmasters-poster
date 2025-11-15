@@ -9,6 +9,7 @@ interface Winner {
   nominee: {
     name: string;
     prefix: string;
+    suffix?: string;
   };
   votes: number;
   percentage?: number;
@@ -56,12 +57,13 @@ const RoleResultsCard: React.FC<RoleResultsCardProps> = ({
           .map((result, index) => {
             const isWinner = winners.some(w => 
               w.nominee.name === result.nominee.name && 
-              w.nominee.prefix === result.nominee.prefix
+              w.nominee.prefix === result.nominee.prefix &&
+              (w.nominee.suffix || '') === (result.nominee.suffix || '')
             );
             
             return (
               <VoteResultItem
-                key={`${result.nominee.name}-${result.nominee.prefix}`}
+                key={`${result.nominee.name}-${result.nominee.prefix}-${result.nominee.suffix || ''}`}
                 result={result}
                 position={index + 1}
                 isWinner={isWinner}
