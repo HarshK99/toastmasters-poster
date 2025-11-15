@@ -4,6 +4,7 @@ interface VoteResult {
   nominee: {
     name: string;
     prefix: string;
+    suffix?: string;
   };
   votes: number;
   percentage?: number;
@@ -32,7 +33,7 @@ const VoteResultItem: React.FC<VoteResultItemProps> = ({ result, position, isWin
         }`}>
           {position}
         </span>
-        <span className="font-medium">{result.nominee.prefix} {result.nominee.name}</span>
+        <span className="font-medium">{result.nominee.prefix} {result.nominee.name}{result.nominee.suffix ? ` (${result.nominee.suffix})` : ''}</span>
       </div>
       
       <div className="flex items-center">
@@ -44,7 +45,7 @@ const VoteResultItem: React.FC<VoteResultItemProps> = ({ result, position, isWin
             style={{ width: `${result.percentage || 0}%` }}
           ></div>
         </div>
-        <span className="text-sm font-medium w-12 text-right">
+        <span className="text-sm font-medium w-12 text-right text-gray-800 dark:text-gray-100">
           {result.votes}
         </span>
       </div>

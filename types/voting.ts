@@ -2,6 +2,7 @@
 export interface Nominee {
   name: string;
   prefix: "TM" | "Guest";
+  suffix?: string;
 }
 
 export interface VotingRole {
@@ -39,6 +40,7 @@ export interface VoteResults {
     percentage: number;
   }[];
   totalVotes: number;
+  voters?: Array<{ name?: string; email?: string } | string>;
 }
 
 export interface User {

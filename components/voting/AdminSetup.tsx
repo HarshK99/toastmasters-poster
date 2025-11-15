@@ -53,8 +53,8 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
       id: `role-${Date.now()}-${index}`,
       name: roleName,
       nominees: [
-        { name: "", prefix: "TM" as const }, 
-        { name: "", prefix: "TM" as const }
+        { name: "", prefix: "TM" as const, suffix: "" }, 
+        { name: "", prefix: "TM" as const, suffix: "" }
       ] // Start with 2 empty nominee fields
     }));
     setRoles(newRoles);
@@ -65,7 +65,8 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
     
     const validNominees = nominees.filter(n => n.trim() !== "").map(name => ({
       name,
-      prefix: "TM" as const
+      prefix: "TM" as const,
+      suffix: ""
     }));
     if (validNominees.length === 0) return;
 
@@ -94,6 +95,19 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
     ));
   };
 
+  const updateRoleNomineeSuffix = (roleId: string, nomineeIndex: number, suffix: string) => {
+    setRoles(roles.map(role => 
+      role.id === roleId 
+        ? {
+            ...role, 
+            nominees: role.nominees.map((nominee, index) => 
+              index === nomineeIndex ? { ...nominee, suffix } : nominee
+            )
+          }
+        : role
+    ));
+  };
+
   const updateRoleNomineePrefix = (roleId: string, nomineeIndex: number, prefix: "TM" | "Guest") => {
     setRoles(roles.map(role => 
       role.id === roleId 
@@ -110,7 +124,7 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
   const addNomineeToRole = (roleId: string) => {
     setRoles(roles.map(role => 
       role.id === roleId 
-        ? { ...role, nominees: [...role.nominees, { name: "", prefix: "TM" as const }] }
+        ? { ...role, nominees: [...role.nominees, { name: "", prefix: "TM" as const, suffix: "" }] }
         : role
     ));
   };
@@ -322,6 +336,62 @@ const AdminSetup: React.FC<AdminSetupProps> = ({ onMeetingCreated, existingMeeti
                           placeholder={`Nominee ${index + 1}`}
                           className="flex-1"
                         />
+                        {/* Suffix handling: special dropdowns for two specific roles, otherwise optional text */}
+                        <div className="w-40">
+                          {role.name === 'Best Role Player' ? (
+                            <>
+                              <Select
+                                value={
+                                  nominee.suffix && ['TMOD','GE','TTM'].includes(nominee.suffix) ? nominee.suffix : (nominee.suffix ? 'other' : '')
+                                }
+                                onChange={(val) => {
+                                  if (val === 'other') {
+                                    updateRoleNomineeSuffix(role.id, index, '');
+                                  } else {
+                                    updateRoleNomineeSuffix(role.id, index, val as string);
+                                  }
+                                }}
+                                options={[
+                                  { value: '', label: 'No Suffix' },
+                                  { value: 'TMOD', label: 'TMOD' },
+                                  { value: 'GE', label: 'GE' },
+                                  { value: 'TTM', label: 'TTM' },
+                                  { value: 'other', label: 'Other' }
+                                ]}
+                              />
+                              {(!['TMOD','GE','TTM'].includes(nominee.suffix || '') && (nominee.suffix || '') !== '') && (
+                                <Input value={nominee.suffix || ''} onChange={(v) => updateRoleNomineeSuffix(role.id, index, v)} placeholder="Custom suffix" className="mt-2" />
+                              )}
+                            </>
+                          ) : role.name === 'Best Tag Role Player' ? (
+                            <>
+                              <Select
+                                value={
+                                  nominee.suffix && ['Timer','Grammarian','Ah counter'].includes(nominee.suffix) ? nominee.suffix : (nominee.suffix ? 'other' : '')
+                                }
+                                onChange={(val) => {
+                                  if (val === 'other') {
+                                    updateRoleNomineeSuffix(role.id, index, '');
+                                  } else {
+                                    updateRoleNomineeSuffix(role.id, index, val as string);
+                                  }
+                                }}
+                                options={[
+                                  { value: '', label: 'No Suffix' },
+                                  { value: 'Timer', label: 'Timer' },
+                                  { value: 'Grammarian', label: 'Grammarian' },
+                                  { value: 'Ah counter', label: 'Ah counter' },
+                                  { value: 'other', label: 'Other' }
+                                ]}
+                              />
+                              {(!['Timer','Grammarian','Ah counter'].includes(nominee.suffix || '') && (nominee.suffix || '') !== '') && (
+                                <Input value={nominee.suffix || ''} onChange={(v) => updateRoleNomineeSuffix(role.id, index, v)} placeholder="Custom suffix" className="mt-2" />
+                              )}
+                            </>
+                          ) : (
+                            <Input value={nominee.suffix || ''} onChange={(v) => updateRoleNomineeSuffix(role.id, index, v)} placeholder="Suffix (optional)" className="w-40" />
+                          )}
+                        </div>
                         {role.nominees.length > 2 && (
                           <Button
                             variant="danger"

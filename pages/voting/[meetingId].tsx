@@ -5,6 +5,7 @@ import VotingInterface from '../../components/voting/VotingInterface'
 import Button from '../../components/ui/button'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
+import Loading from '@/components/ui/Loading'
 
 export default function MeetingVotingPage() {
   const router = useRouter()
@@ -62,12 +63,7 @@ export default function MeetingVotingPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
-        <div className="flex-1 flex items-center justify-center pt-24 sm:pt-28">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading meeting...</p>
-          </div>
-        </div>
+        <Loading message="Loading meeting..." variant="center" className="pt-24 sm:pt-28" />
         <Footer />
       </div>
     )
@@ -105,10 +101,7 @@ export default function MeetingVotingPage() {
           </div>
         ) : (
           <div className="max-w-4xl mx-auto">
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Setting up your voting session...</p>
-            </div>
+            <Loading message="Setting up your voting session..." variant="inline" />
           </div>
         )}
       </div>

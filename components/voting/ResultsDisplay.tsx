@@ -49,7 +49,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
     results.forEach(roleResult => {
       const winners = getWinners(roleResult);
       if (winners.length > 0) {
-        const winnerNames = winners.map(w => `${w.nominee.prefix} ${w.nominee.name}`).join(', ');
+        const winnerNames = winners.map(w => `${w.nominee.prefix} ${w.nominee.name}${w.nominee.suffix ? ` (${w.nominee.suffix})` : ''}`).join(', ');
         resultText += `${roleResult.roleName}: ${winnerNames}\n`;
       }
     });

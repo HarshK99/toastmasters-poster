@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Button from "@/components/ui/button";
 import Card from "@/components/ui/Card";
+import Loading from '@/components/ui/Loading'
 import { Meeting } from "@/types/voting";
 
 interface ResultsViewerProps {
@@ -39,16 +40,7 @@ const ResultsViewer: React.FC<ResultsViewerProps> = ({ meeting, onBack }) => {
   }, [meeting.slug]);
 
   if (isLoading) {
-    return (
-      <div className="max-w-4xl mx-auto">
-        <Card>
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading results...</p>
-          </div>
-        </Card>
-      </div>
-    );
+    return <Loading message="Loading results..." variant="card" />
   }
 
   return (
