@@ -15,7 +15,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
-    --foreground: #ededed;
+    /* keep --foreground unchanged so global text color stays dark (use explicit text classes for dark backgrounds) */
   }
 }
 

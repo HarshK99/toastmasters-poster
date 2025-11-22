@@ -30,10 +30,10 @@ const RoleResultsCard: React.FC<RoleResultsCardProps> = ({
 }) => {
   const HiddenResults = () => (
     <div 
-      className="h-32 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+      className="h-32 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
       onClick={() => onRevealRole(roleResult.roleId)}
     >
-      <div className="text-center text-gray-500">
+      <div className="text-center text-gray-500 dark:text-gray-300">
         <div className="text-4xl mb-2">🎭</div>
         <p>Results Hidden</p>
         <p className="text-xs">Click here or &ldquo;Reveal Winner&rdquo; to show</p>
@@ -44,7 +44,7 @@ const RoleResultsCard: React.FC<RoleResultsCardProps> = ({
   const DetailedResults = () => {
     if (!roleResult.results || roleResult.results.length === 0) {
       return (
-        <div className="text-center text-gray-500 py-4">
+        <div className="text-center text-gray-500 dark:text-gray-300 py-4">
           No detailed results available
         </div>
       );
@@ -97,7 +97,7 @@ const RoleResultsCard: React.FC<RoleResultsCardProps> = ({
           <>
             <WinnerAnnouncement winners={winners} />
             <DetailedResults />
-            <div className="pt-2 border-t text-sm text-gray-600 text-center">
+            <div className="pt-2 border-t text-sm text-gray-700 text-center">
               Total Votes: {roleResult.totalVotes}
             </div>
           </>

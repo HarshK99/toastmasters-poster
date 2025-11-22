@@ -11,19 +11,19 @@ const Header: React.FC = () => {
   };
   
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-50">
+    <header className="fixed top-0 left-0 right-0 bg-gradient-to-r from-sky-200 via-blue-200 to-blue-400 z-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Main header content */}
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo/Brand */}
           <div className="flex-shrink-0">
             <Link href="/" className="block">
-              <h1 className="text-lg sm:text-xl font-bold text-gray-800">
-                Toastmasters Tools
-              </h1>
-              <p className="hidden sm:block text-xs text-gray-600">
-                Essential tools for better meetings
-              </p>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+                  Toastmasters Tools
+                </h1>
+                <p className="hidden sm:block text-xs text-gray-700">
+                  Essential tools for better meetings
+                </p>
             </Link>
           </div>
           
@@ -32,19 +32,19 @@ const Header: React.FC = () => {
             <Link
               href="/"
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                router.pathname === "/" 
-                  ? "bg-blue-100 text-blue-700 shadow-sm" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              } ${router.pathname.startsWith('/voting') ? 'glow-once' : ''}`}
+                  router.pathname === "/" 
+                    ? "bg-white/80 text-gray-900 shadow-sm" 
+                    : "text-gray-900/90 hover:bg-white/50"
+                } ${router.pathname.startsWith('/voting') ? 'glow-once' : ''}`}
             >
               Word of the Day Generator
             </Link>
             <Link
               href="/voting"
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                router.pathname.startsWith("/voting") 
-                  ? "bg-blue-100 text-blue-700 shadow-sm" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  router.pathname.startsWith("/voting") 
+                    ? "bg-white/80 text-gray-900 shadow-sm" 
+                    : "text-gray-900/90 hover:bg-white/50"
               }`}
             >
               Voting System
@@ -54,7 +54,7 @@ const Header: React.FC = () => {
           {/* Mobile menu button */}
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            className="md:hidden p-2 rounded-lg text-gray-900 hover:text-gray-900 hover:bg-white/30 transition-colors"
             aria-label="Toggle mobile menu"
           >
             <svg
@@ -91,7 +91,7 @@ const Header: React.FC = () => {
           }`}
         >
           <nav className="flex flex-col space-y-2 pt-2 border-t border-gray-200">
-            <p className="text-xs text-gray-500 px-2 mb-2">
+            <p className="text-xs text-gray-700 px-2 mb-2">
               Essential tools for better meetings
             </p>
             <Link
@@ -99,8 +99,8 @@ const Header: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(false)}
               className={`px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
                 router.pathname === "/" 
-                  ? "bg-blue-100 text-blue-700" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  ? "bg-white/80 text-gray-900" 
+                  : "text-gray-900/90 hover:bg-white/50"
               } ${router.pathname.startsWith('/voting') ? 'glow-once' : ''}`}
             >
               📄 Word of the Day Generator
@@ -110,8 +110,8 @@ const Header: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(false)}
               className={`px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
                 router.pathname.startsWith("/voting") 
-                  ? "bg-blue-100 text-blue-700" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  ? "bg-white/80 text-gray-900" 
+                  : "text-gray-900/90 hover:bg-white/50"
               }`}
             >
               🗳️ Voting System
