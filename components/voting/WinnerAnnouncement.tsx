@@ -35,7 +35,7 @@ const WinnerAnnouncement: React.FC<WinnerAnnouncementProps> = ({ winners }) => {
           </div>
           {winners.map((winner) => (
             <div key={`${winner.nominee.name}-${winner.nominee.prefix}-${winner.nominee.suffix || ''}`} className="mb-1 last:mb-0">
-              <div className="font-semibold text-yellow-800">
+              <div className="font-semibold text-yellow-900">
                 {winner.nominee.prefix} {winner.nominee.name}{winner.nominee.suffix ? ` (${winner.nominee.suffix})` : ''}
               </div>
               <div className="text-sm text-yellow-800">
