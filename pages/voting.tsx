@@ -39,7 +39,7 @@ const AdminLogin = ({ onLogin }: { onLogin: (email: string) => void }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+    <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6 text-gray-900">
       <h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2>
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
@@ -76,6 +76,11 @@ const AdminLogin = ({ onLogin }: { onLogin: (email: string) => void }) => {
         >
           {isLoading ? "Logging in..." : "Login"}
         </button>
+        <div className="text-center mt-3">
+          <p className="text-xs text-gray-500">
+            - To create an account, <a href="mailto:harshkankaria9@gmail.com" className="text-gray-600 underline">contact owner</a> -
+          </p>
+        </div>
       </form>
     </div>
   );
