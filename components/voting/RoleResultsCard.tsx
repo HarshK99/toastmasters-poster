@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/button";
 import WinnerAnnouncement from "./WinnerAnnouncement";
@@ -28,6 +28,14 @@ const RoleResultsCard: React.FC<RoleResultsCardProps> = ({
   winners,
   onRevealRole,
 }) => {
+  const [showPoppers, setShowPoppers] = useState(false);
+
+  useEffect(() => {
+    if (isRevealed) {
+      setShowPoppers(true);
+      setTimeout(() => setShowPoppers(false), 3000);
+    }
+  }, [isRevealed]);
   const HiddenResults = () => (
     <div 
       className="h-32 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
@@ -76,35 +84,55 @@ const RoleResultsCard: React.FC<RoleResultsCardProps> = ({
 
   return (
     <Card className="relative">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">
-          {roleResult.roleName}
-        </h3>
-        
-        {!isRevealed && (
-          <Button
-            onClick={() => onRevealRole(roleResult.roleId)}
-            size="sm"
-            className="animate-pulse"
-          >
-            Reveal Winner
-          </Button>
-        )}
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            {roleResult.roleName}
+          </h3>
+          
+          {!isRevealed && (
+            <Button
+              onClick={() => onRevealRole(roleResult.roleId)}
+              size="sm"
+              className="animate-pulse"
+            >
+              Reveal Winner
+            </Button>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          {isRevealed ? (
+            <>
+              <WinnerAnnouncement winners={winners} />
+              <DetailedResults />
+              <div className="pt-2 border-t text-sm text-gray-700 text-center">
+                Total Votes: {roleResult.totalVotes}
+              </div>
+            </>
+          ) : (
+            <HiddenResults />
+          )}
+        </div>
       </div>
 
-      <div className="space-y-3">
-        {isRevealed ? (
-          <>
-            <WinnerAnnouncement winners={winners} />
-            <DetailedResults />
-            <div className="pt-2 border-t text-sm text-gray-700 text-center">
-              Total Votes: {roleResult.totalVotes}
+      {showPoppers && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute animate-float-up"
+              style={{
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${2 + Math.random() * 2}s`,
+              }}
+            >
+              {['🎉', '🎊', '✨', '🎈', '🏆'][Math.floor(Math.random() * 5)]}
             </div>
-          </>
-        ) : (
-          <HiddenResults />
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 };
