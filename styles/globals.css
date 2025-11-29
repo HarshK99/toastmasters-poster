@@ -45,3 +45,19 @@ body {
   animation: glowOnce 1.6s ease-in-out 1;
   border-radius: 0.5rem;
 }
+
+/* Floating popper animation */
+@keyframes floatUp {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100px) scale(1.2);
+  }
+}
+
+.animate-float-up {
+  animation: floatUp linear forwards;
+}
