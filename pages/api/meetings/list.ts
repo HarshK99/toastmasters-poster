@@ -1,6 +1,7 @@
 // API route to get all meetings for admin
 import { NextApiRequest, NextApiResponse } from 'next'
 import { supabase } from '../../../lib/database'
+import { DatabaseMeeting } from '../../../lib/database'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -31,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('Found meetings:', meetings?.length || 0)
     
     // Map database fields to frontend-friendly names for consistency
-    const mappedMeetings = meetings?.map(meeting => ({
+    const mappedMeetings = meetings?.map((meeting: DatabaseMeeting) => ({
       ...meeting,
       clubName: meeting.club_name,
       isActive: meeting.is_active,

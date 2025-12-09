@@ -39,6 +39,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Invalid email or password' })
     }
 
+    // Check if password exists
+    if (!user.password) {
+      return res.status(401).json({ error: 'Invalid email or password' })
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password)
     
